@@ -27,6 +27,7 @@
     "react-dom": "^18.2.0",
     "react-native": "^0.76.7",
     "react-native-confetti-cannon": "^1.5.2",
+    "react-native-dotenv": "^3.4.11",
     "react-native-element-dropdown": "^2.12.1",
     "react-native-gesture-handler": "~2.20.2",
     "react-native-orientation-locker": "^1.7.0",
