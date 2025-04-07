@@ -8,10 +8,10 @@ const Graph = ({ weeklyData, dailyData }) => {
       <View style={styles.sup}>
         <View style={styles.supInner}>
           <Text style={styles.supText}> 
-            <Text style={styles.supBig}>{dailyData?.[0] || 0}</Text> Weekly
+            <Text style={styles.supBig}>{dailyData?.[0] || 0}</Text>   Weekly
           </Text>
           <Text style={styles.supText}> 
-            <Text style={styles.supBig}>{dailyData?.[1] || 0}</Text> All Time
+            <Text style={styles.supBig}>{dailyData?.[1] || 0}</Text>   All Time
           </Text>
         </View>
 
@@ -66,14 +66,15 @@ const styles = StyleSheet.create({
   supInner: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginHorizontal: 20,
+    marginHorizontal: 13,
   },
   supText: {
+    fontSize: 17,
     fontFamily: 'Cairo',
     textAlign: 'center',
   },
   supBig: {
-    fontSize: 35,
+    fontSize: 45,
     fontWeight: '300',
     color: "#AA336A",
     fontWeight: 'bold',

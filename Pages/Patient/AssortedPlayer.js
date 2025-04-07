@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Cairo',
     textAlign: 'center',
     color: 'white',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: 'bold',
   },
   buttonContainer: {

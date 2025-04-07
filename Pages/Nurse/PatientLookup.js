@@ -198,7 +198,7 @@ const PatientLookup = ({ navigation }) => {
               setSearchQuery(text);
             }
           }}
-          keyboardType={searchBy === 'id' ? 'numeric' : 'default'} 
+          keyboardType='default' 
         />
           <TouchableOpacity style={styles.searchButton} onPress={searchPatients}>
             <Text style={styles.buttonText}>Search</Text>

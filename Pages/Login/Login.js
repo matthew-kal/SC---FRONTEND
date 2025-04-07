@@ -15,7 +15,7 @@ import { BASE_URL } from '@env';
 const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, password, setPassword, onSubmit, isPatient }) => {
   const navigation = useNavigation();
   const { width } = Dimensions.get('window');
-  const innerSizer = width < 400 ? 19 : width < 450 ? 21 : 25;
+  const innerSizer = width < 400 ? 22 : 25;
   return (
     <View style={styles.buttonContainer}>
       <CustomInput
@@ -70,7 +70,7 @@ const Login = () => {
   const [renderPatient, setRenderPatient] = useState(false);
   const [renderNurse, setRenderNurse] = useState(false);
   const [error, setError] = useState('');
-  const outerSizer = width < 400 ? 20 : width < 450 ? 22 : 24;
+  const outerSizer = 26;
   const w = 315;
   const h = 75;
   const logoWidth = width < 400 ? w * 0.8 : width < 450 ? w * 0.9 : w;
@@ -79,7 +79,7 @@ const Login = () => {
  
     useEffect(() => {
     checkPatientLoginStatus(); 
-    registerForPushNotificationsAsync();
+    // registerForPushNotificationsAsync();
   }, []); 
 
   
@@ -193,12 +193,12 @@ const Login = () => {
         console.log("✅ Login successful, calling push token registration...");
 
         // 🔥 Ensure the function is called
-        console.log("🔥 Calling `registerForPushNotificationsAsync` now...");
+        // console.log("🔥 Calling `registerForPushNotificationsAsync` now...");
 
         // ✅ Register push token
-        await registerForPushNotificationsAsync(data.access);
+        // await registerForPushNotificationsAsync(data.access);
 
-        console.log("🚀 `registerForPushNotificationsAsync` executed successfully!");
+        // console.log("🚀 `registerForPushNotificationsAsync` executed successfully!");
         setRefresh(true)
         navigation.navigate('PatientNavigation', { screen: 'PatientDashboard' });
       } else {

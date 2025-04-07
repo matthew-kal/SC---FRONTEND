@@ -14,7 +14,7 @@ const DashPlayer = ({ route, navigation }) => {
   const { videoUrl, videoTitle, videoId, videoDescription, isCompleted} = route.params; 
   const [confettiVisible, setConfettiVisible] = useState(false);
   const videoRef = useRef(null);
-  const {width, _ } = Dimensions.get("window")
+  const {width, height } = Dimensions.get("window")
   const { refresh, setRefresh } = useContext(PatientContext);
 
   const handlePlaybackStatusUpdate = async (playbackStatus) => {
@@ -138,7 +138,7 @@ const DashPlayer = ({ route, navigation }) => {
           <View style={styles.confettiContainer}>
             <ConfettiCannon
               count={200}
-              origin={{ x: 0, y: 0 }}
+              origin={{ x: width / 2, y: height / 2 }}
               colors={['#AA336A', '#FFFFFF']}
               fadeOut
             />
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Cairo',
     textAlign: 'center',
     color: 'white',
-    fontSize: 16,
+    fontSize: 19,
     fontWeight: 'bold',
   },
   buttonContainer: {

@@ -323,7 +323,7 @@ const styles = StyleSheet.create({
   innerText: {
     fontFamily: 'Cairo',
     alignSelf: 'center',
-    fontSize: 16,
+    fontSize: 18,
   },
   button: {
     borderWidth: 1,
@@ -352,7 +352,7 @@ const styles = StyleSheet.create({
   buttonText: {
     fontFamily: "Cairo",
     alignSelf: 'center',
-    fontSize: 15,
+    fontSize: 18,
     color: '#AA336A',
     fontWeight: 'bold',
   },

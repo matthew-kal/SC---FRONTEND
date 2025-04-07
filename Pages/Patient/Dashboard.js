@@ -23,11 +23,10 @@ const Dashboard = ({ navigation }) => {
   const [quote, setQuote] = useState(''); 
   const { refresh, setRefresh, date, setDate } = useContext(PatientContext);
   const {width} = Dimensions.get("window")
-  const now = new Date();
   const w = 295;
   const h = 70;
-  const logoWidth = width < 400 ? w * 0.825 : width < 450 ? w * 0.925 : w;
-  const logoHeight = width < 400 ? h * 0.825 : width < 450 ? h * 0.925 : h;     
+  const logoWidth = width < 400 ? w * 0.85 : w;
+  const logoHeight = width < 400 ? h * 0.85 : h;     
   
   const fetchDashboardData = async () => {
     try {
@@ -318,7 +317,7 @@ const styles = StyleSheet.create({
   },
   quoteText: {
     fontFamily: 'Cairo',
-    fontSize: 15,
+    fontSize: 18,
     textAlign: 'center',
   },
   videoScroll: {
@@ -327,13 +326,13 @@ const styles = StyleSheet.create({
   moduleTitle: {
     fontWeight: '400',
     fontFamily: 'Cairo',
-    fontSize: 17,
+    fontSize: 19,
   },
   moduleDesc: {
     fontWeight: '400',
     fontFamily: 'Cairo',
     fontStyle: 'italic',
-    fontSize: 15,
+    fontSize: 17,
     marginBottom: 5
   },
   inner: {
