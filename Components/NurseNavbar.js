@@ -3,6 +3,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getSecureItem, saveSecureItem, deleteSecureItem} from './Memory';
+import { BASE_URL } from '@env';
 
 const NurseNavbar = () => {
   const navigation = useNavigation();
@@ -39,7 +40,7 @@ const NurseNavbar = () => {
   // Refresh the access token using refresh token
   const refreshAccessToken = async (refreshToken) => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+      const response = await fetch(`${BASE_URL}/users/token/refresh/1`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -71,7 +72,7 @@ const NurseNavbar = () => {
         return;
       }
 
-      let response = await fetch('http://127.0.0.1:8000/users/logout/', {
+      let response = await fetch(`${BASE_URL}/users/logout/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -84,7 +85,7 @@ const NurseNavbar = () => {
         accessToken = await refreshAccessToken(refreshToken);
 
         if (accessToken) {
-          response = await fetch('http://127.0.0.1:8000/users/logout/', {
+          response = await fetch(`${BASE_URL}/users/logout/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

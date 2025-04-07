@@ -5,6 +5,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CustomInput from '../../Components/CustomInput';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { BASE_URL } from '@env';
 
 
 const PatientSettings = () => {
@@ -38,7 +39,7 @@ const PatientSettings = () => {
       }
 
       // Attempt to logout using the current access token
-      let response = await fetch('http://127.0.0.1:8000/users/logout/', {
+      let response = await fetch(`${BASE_URL}/users/logout/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -54,7 +55,7 @@ const PatientSettings = () => {
 
         if (accessToken) {
           // Retry logging out with the refreshed access token
-          response = await fetch('http://127.0.0.1:8000/users/logout/', {
+          response = await fetch(`${BASE_URL}/users/logout/`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -89,7 +90,7 @@ const PatientSettings = () => {
 // Function to refresh access token using the refresh token
 const refreshAccessToken = async (refreshToken) => {
   try {
-    const response = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+    const response = await fetch(`${BASE_URL}/users/token/refresh/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -143,7 +144,7 @@ const refreshAccessToken = async (refreshToken) => {
       let token = await getSecureItem('accessPatient');
       if (!token) throw new Error('No access token found');
   
-      let response = await fetch('http://127.0.0.1:8000/users/user-settings/', {
+      let response = await fetch(`${BASE_URL}/users/user-settings/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -155,7 +156,7 @@ const refreshAccessToken = async (refreshToken) => {
         const refreshToken = await getSecureItem('refreshPatient');
         if (!refreshToken) throw new Error('No refresh token found');
   
-        const refreshResponse = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',  
           headers: {
             'Content-Type': 'application/json',
@@ -198,7 +199,7 @@ const refreshAccessToken = async (refreshToken) => {
       let token = await getSecureItem('accessPatient');
       if (!token) throw new Error('No access token found');
 
-      let response = await fetch('http://127.0.0.1:8000/users/change-password/', {
+      let response = await fetch(`${BASE_URL}/users/change-password/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

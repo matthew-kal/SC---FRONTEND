@@ -7,6 +7,7 @@ import Graph from '../../Components/Graph.js';
 import Logo from '../../Images/Logo.png';
 import {getSecureItem, saveSecureItem} from "../../Components/Memory"
 import { PatientContext } from '../../Components/PatientContext';
+import { BASE_URL } from '@env';
 
 
 
@@ -33,7 +34,7 @@ const Dashboard = ({ navigation }) => {
       let token = await getSecureItem('accessPatient');
       if (!token) throw new Error('No access token found');
   
-      let response = await fetch('http://127.0.0.1:8000/users/dashboard/', {
+      let response = await fetch(`${BASE_URL}/users/dashboard/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -45,7 +46,7 @@ const Dashboard = ({ navigation }) => {
         const refreshToken = await getSecureItem('refreshPatient');
         if (!refreshToken) throw new Error('No refresh token found');
   
-        const refreshResponse = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -59,7 +60,7 @@ const Dashboard = ({ navigation }) => {
         await saveSecureItem('accessPatient', refreshData.access);
         token = refreshData.access;
   
-        response = await fetch('http://127.0.0.1:8000/users/dashboard/', {
+        response = await fetch(`${BASE_URL}/users/dashboard/`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -124,7 +125,7 @@ const Dashboard = ({ navigation }) => {
       let token = await getSecureItem('accessPatient');
       if (!token) throw new Error('No access token found');
   
-      const response = await fetch(`http://127.0.0.1:8000/users/tasks/update-completion/${taskId}/`, {
+      const response = await fetch(`${BASE_URL}/users/tasks/update-completion/${taskId}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -136,7 +137,7 @@ const Dashboard = ({ navigation }) => {
         const refreshToken = await getSecureItem('refreshPatient');
         if (!refreshToken) throw new Error('No refresh token found');
   
-        const refreshResponse = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -150,7 +151,7 @@ const Dashboard = ({ navigation }) => {
         await saveSecureItem('accessPatient', refreshData.access);
         token = refreshData.access;
 
-        const retryCompletionResponse = await fetch(`http://127.0.0.1:8000/users/tasks/update-completion/${taskId}/`, {
+        const retryCompletionResponse = await fetch(`${BASE_URL}/users/tasks/update-completion/${taskId}/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

@@ -1,5 +1,6 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
+import { BASE_URL } from '@env';
 
 export async function registerForPushNotificationsAsync(userAuthToken) {
   let token;
@@ -36,7 +37,7 @@ export async function registerForPushNotificationsAsync(userAuthToken) {
     console.log("✅ Sending token to backend...");
 
     try {
-      const response = await fetch('http://192.168.1.100:8000/api/save-token/', {
+      const response = await fetch(`${BASE_URL}/api/save-token/`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

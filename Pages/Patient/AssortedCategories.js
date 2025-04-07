@@ -5,6 +5,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Logo from '../../Images/Logo.png';
 import {getSecureItem, saveSecureItem} from "../../Components/Memory"
+import { BASE_URL } from '@env';
 
 const Category = ({ text, handlePress, icon }) => (
   <TouchableOpacity style={styles.buttonContainer} onPress={handlePress}>
@@ -39,7 +40,7 @@ useEffect(() => {
       let token = await getSecureItem('accessPatient');
       if (!token) throw new Error('No access token found');
 
-      let response = await fetch('http://127.0.0.1:8000/users/categories/', {
+      let response = await fetch(`${BASE_URL}/users/categories/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ useEffect(() => {
         const refreshToken = await getSecureItem('refreshPatient');
         if (!refreshToken) throw new Error('No refresh token found');
 
-        const refreshResponse = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ useEffect(() => {
         await saveSecureItem('accessPatient', refreshData.access);
         token = refreshData.access;
 
-        response = await fetch('http://127.0.0.1:8000/users/categories/', {
+        response = await fetch(`${BASE_URL}/users/categories/`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

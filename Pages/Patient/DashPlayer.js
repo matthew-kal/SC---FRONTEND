@@ -7,6 +7,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import {getSecureItem, saveSecureItem} from "../../Components/Memory"
 import Logo from '../../Images/mini_logo.png';
 import { PatientContext } from '../../Components/PatientContext';
+import { BASE_URL } from '@env';
 
 
 const DashPlayer = ({ route, navigation }) => {
@@ -37,7 +38,7 @@ const DashPlayer = ({ route, navigation }) => {
       let token = await getSecureItem('accessPatient');
       if (!token) throw new Error('No access token found');
 
-      const response = await fetch(`http://127.0.0.1:8000/users/update_video_completion/${videoId}/`, {
+      const response = await fetch(`${BASE_URL}/users/update_video_completion/${videoId}/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -50,7 +51,7 @@ const DashPlayer = ({ route, navigation }) => {
         const refreshToken = await getSecureItem('refreshPatient');
         if (!refreshToken) throw new Error('No refresh token found');
 
-        const refreshResponse = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -64,7 +65,7 @@ const DashPlayer = ({ route, navigation }) => {
         await saveSecureItem('accessPatient', refreshData.access);
         token = refreshData.access;
 
-        const retryCompletionResponse = await fetch(`http://127.0.0.1:8000/users/update_video_completion/${videoId}/`, {
+        const retryCompletionResponse = await fetch(`${BASE_URL}/users/update_video_completion/${videoId}/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

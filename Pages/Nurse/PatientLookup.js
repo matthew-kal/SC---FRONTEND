@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensio
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {getSecureItem, saveSecureItem} from "../../Components/Memory"
+import { BASE_URL } from '@env';
 
 const PatientLookup = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,7 +22,7 @@ const PatientLookup = ({ navigation }) => {
       let token = await getSecureItem('accessNurse');
 
       const makeRequest = async (token) => {
-        return await fetch(`http://127.0.0.1:8000/users/patients-list/?searchBy=${searchBy}&query=${searchQuery}`, {
+        return await fetch(`${BASE_URL}/users/patients-list/?searchBy=${searchBy}&query=${searchQuery}`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
@@ -36,7 +37,7 @@ const PatientLookup = ({ navigation }) => {
         const refreshToken = await getSecureItem('refreshNurse');
         if (!refreshToken) throw new Error('No refresh token found');
 
-        const refreshResponse = await fetch('http://localhost:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -69,7 +70,7 @@ const PatientLookup = ({ navigation }) => {
       let token = await getSecureItem("accessNurse"); // Use accessNurse instead of accessPatient
       if (!token) throw new Error("No access token found");
   
-      let response = await fetch(`http://localhost:8000/users/patient-graph/${id}/`, {
+      let response = await fetch(`${BASE_URL}/users/patient-graph/${id}/`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json",
@@ -83,7 +84,7 @@ const PatientLookup = ({ navigation }) => {
         const refreshToken = await getSecureItem("refreshNurse"); // Use refreshNurse instead of refreshPatient
         if (!refreshToken) throw new Error("No refresh token found");
   
-        const refreshResponse = await fetch(`http://localhost:8000/users/token/refresh/`, {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -97,7 +98,7 @@ const PatientLookup = ({ navigation }) => {
         await saveSecureItem("accessNurse", refreshData.access); // Save new access token
   
         // Retry original request with new access token
-        response = await fetch(`http://localhost:8000/users/patient-graph/${id}/`, {
+        response = await fetch(`${BASE_URL}/users/patient-graph/${id}/`, {
           method: "GET",
           headers: {
             "Content-Type": "application/json",

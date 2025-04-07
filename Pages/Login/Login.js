@@ -9,6 +9,7 @@ import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Logo from '../../Images/Logo.png'; 
 import { PatientContext } from '../../Components/PatientContext';
 import { registerForPushNotificationsAsync, scheduleLocalNotification } from '../../Services/notifications';
+import { BASE_URL } from '@env';
 
 
 const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, password, setPassword, onSubmit, isPatient }) => {
@@ -100,7 +101,7 @@ const Login = () => {
   
   const refreshPatientAccessToken = async (refreshToken) => {
     try {
-      const response = await fetch("http://127.0.0.1:8000/api/token/refresh/", {
+      const response = await fetch(`${BASE_URL}/api/token/refresh/`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refresh: refreshToken }),
@@ -146,7 +147,7 @@ const Login = () => {
 
   const handleNurseLogin = async () => {
     try {
-      const response = await fetch('http://127.0.0.1:8000/users/nurse/login/', {
+      const response = await fetch(`${BASE_URL}/users/nurse/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -172,8 +173,9 @@ const Login = () => {
   };
 
   const handlePatientLogin = async () => {
+    console.log(BASE_URL)
     try {
-      const response = await fetch('http://127.0.0.1:8000/users/patient/login/', {
+      const response = await fetch(`${BASE_URL}/users/patient/login/`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

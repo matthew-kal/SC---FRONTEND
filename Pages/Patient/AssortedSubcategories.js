@@ -6,6 +6,7 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Logo from '../../Images/Logo.png';
 import miniLogo from '../../Images/mini_logo.png';
 import {getSecureItem, saveSecureItem} from "../../Components/Memory"
+import { BASE_URL } from '@env';
 
 const SubCategory = ({ text, handlePress }) => {
   return (
@@ -39,7 +40,7 @@ const AssortedSubcategories = () => {
       let token = await getSecureItem('accessPatient');
       if (!token) throw new Error('No access token found');
 
-      let response = await fetch(`http://127.0.0.1:8000/users/${categoryId}/subcategories/`, {
+      let response = await fetch(`${BASE_URL}/users/${categoryId}/subcategories/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -51,7 +52,7 @@ const AssortedSubcategories = () => {
         const refreshToken = await getSecureItem('refreshPatient');
         if (!refreshToken) throw new Error('No refresh token found');
 
-        const refreshResponse = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -65,7 +66,7 @@ const AssortedSubcategories = () => {
         await saveSecureItem('accessPatient', refreshData.access);
         token = refreshData.access;
 
-        response = await fetch(`http://127.0.0.1:8000/users/${categoryId}/subcategories/`, {
+        response = await fetch(`${BASE_URL}/users/${categoryId}/subcategories/`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

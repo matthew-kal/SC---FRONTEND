@@ -6,6 +6,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import Logo from '../../Images/Logo.png';
 import miniLogo from '../../Images/mini_logo.png';
 import {getSecureItem, saveSecureItem} from "../../Components/Memory"
+import { BASE_URL } from '@env';
+
 
 
 const Module = ({ title, handlePress }) => (
@@ -36,7 +38,7 @@ const AssortedModules = () => {
       let token = await getSecureItem('accessPatient');
       if (!token) throw new Error('No access token found');
 
-      let response = await fetch(`http://127.0.0.1:8000/users/${categoryId}/${subcategoryId}/modules-list/`, {
+      let response = await fetch(`${BASE_URL}/users/${categoryId}/${subcategoryId}/modules-list/`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -48,7 +50,7 @@ const AssortedModules = () => {
         const refreshToken = await getSecureItem('refreshPatient');
         if (!refreshToken) throw new Error('No refresh token found');
 
-        const refreshResponse = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -62,7 +64,7 @@ const AssortedModules = () => {
         await saveSecureItem('accessPatient', refreshData.access);
         token = refreshData.access;
 
-        response = await fetch(`http://127.0.0.1:8000/users/${categoryId}/${subcategoryId}/modules-list/`, {
+        response = await fetch(`${BASE_URL}/users/${categoryId}/${subcategoryId}/modules-list/`, {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',

@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CustomInput from '../../Components/CustomInput';
 import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/cairo';
+import { BASE_URL } from '@env';
 
 const PasswordRecovery = ({ navigation }) => {
     const [email, setEmail] = useState('');
@@ -15,7 +16,7 @@ const PasswordRecovery = ({ navigation }) => {
         if (email) {
             // Simulate an API call
             try {
-                const response = await fetch('http://127.0.0.1:8000/users/password-reset/', {
+                const response = await fetch(`${BASE_URL}/users/password-reset/`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',

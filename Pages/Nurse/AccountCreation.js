@@ -5,6 +5,8 @@ import CustomInput from '../../Components/CustomInput';
 import Icon from 'react-native-vector-icons/Ionicons';
 import {getSecureItem, saveSecureItem} from "../../Components/Memory"
 import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
+import { BASE_URL } from '@env';
+
 // import Orientation from 'react-native-orientation-locker';  // Developer Mode
 
 
@@ -22,7 +24,7 @@ const AccountCreation = () => {
       
       // Step 2: Define function for making registration request
       const makeRequest = async (token) => {
-        return await fetch('http://127.0.0.1:8000/users/patient/register/', {
+        return await fetch(`${BASE_URL}/users/patient/register/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -45,7 +47,7 @@ const AccountCreation = () => {
         const refreshToken = await getSecureItem('refreshNurse');
         if (!refreshToken) throw new Error('No refresh token found');
 
-        const refreshResponse = await fetch('http://127.0.0.1:8000/users/token/refresh/', {
+        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
