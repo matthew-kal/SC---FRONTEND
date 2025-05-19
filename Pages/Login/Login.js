@@ -79,7 +79,6 @@ const Login = () => {
  
     useEffect(() => {
     checkPatientLoginStatus(); 
-    // registerForPushNotificationsAsync();
   }, []); 
 
   
@@ -90,6 +89,7 @@ const Login = () => {
   
     if (accessToken) {
       setRefresh(true)
+      await registerForPushNotificationsAsync(accessToken);
       navigation.navigate('PatientNavigation', {
         screen: 'PatientDashboard'
       });
@@ -111,6 +111,7 @@ const Login = () => {
         const data = await response.json();
         await saveSecureItem("accessPatient", data.access);
         setRefresh(true)
+        await registerForPushNotificationsAsync(data.access)
         navigation.navigate('PatientNavigation', {
           screen: 'PatientDashboard'
         });
@@ -133,17 +134,18 @@ const Login = () => {
   }, []);
   */  
 
-  useFocusEffect(
-    useCallback(() => {
-      setNurseUsername('');
-      setNursePassword('');
-      setPatientUsername('');
-      setPatientPassword('');
-      setRenderPatient(false);
-      setRenderNurse(false);
-      setError('');
-    }, [])
-  );
+useFocusEffect(
+  useCallback(() => {
+    checkPatientLoginStatus();
+    setNurseUsername('');
+    setNursePassword('');
+    setPatientUsername('');
+    setPatientPassword('');
+    setRenderPatient(false);
+    setRenderNurse(false);
+    setError('');
+  }, [])
+);
 
   const handleNurseLogin = async () => {
     try {
@@ -193,12 +195,12 @@ const Login = () => {
         console.log("✅ Login successful, calling push token registration...");
 
         // 🔥 Ensure the function is called
-        // console.log("🔥 Calling `registerForPushNotificationsAsync` now...");
+      console.log("🔥 Calling `registerForPushNotificationsAsync` now...");
 
         // ✅ Register push token
-        // await registerForPushNotificationsAsync(data.access);
+        await registerForPushNotificationsAsync(data.access);
 
-        // console.log("🚀 `registerForPushNotificationsAsync` executed successfully!");
+        console.log("🚀 `registerForPushNotificationsAsync` executed successfully!");
         setRefresh(true)
         navigation.navigate('PatientNavigation', { screen: 'PatientDashboard' });
       } else {
