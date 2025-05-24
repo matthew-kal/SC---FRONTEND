@@ -4,8 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Logo from '../../Images/Logo.png';
-import {getSecureItem, saveSecureItem} from "../../Components/Memory"
-import { BASE_URL } from '@env';
+import { useFetchWithAuth } from '../../Components/FetchWithAuth';
 
 const Category = ({ text, handlePress, icon }) => (
   <TouchableOpacity style={styles.buttonContainer} onPress={handlePress}>
@@ -18,67 +17,33 @@ const Category = ({ text, handlePress, icon }) => (
 
 const AssortedCategories = () => {
   const navigation = useNavigation();
+  const { fetchWithAuth } = useFetchWithAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
   const {width, _ } = Dimensions.get("window") 
-
-  {/*  OLD SYSTEM, CHANGE IF NEEDED
-  useEffect(
-    useCallback(() => {
-      fetchCategories();
-    }, [])
-  );
-  */}
 
 useEffect(() => {
   fetchCategories();
 }, [])
 
   const fetchCategories = async () => {
+    setLoading(true);
     try {
-      let token = await getSecureItem('accessPatient');
-      if (!token) throw new Error('No access token found');
+      const response = await fetchWithAuth('/users/categories/', { method: 'GET' });
 
-      let response = await fetch(`${BASE_URL}/users/categories/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        const refreshToken = await getSecureItem('refreshPatient');
-        if (!refreshToken) throw new Error('No refresh token found');
-
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-
-        if (!refreshResponse.ok) throw new Error('Failed to refresh token');
-
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem('accessPatient', refreshData.access);
-        token = refreshData.access;
-
-        response = await fetch(`${BASE_URL}/users/categories/`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
       const data = await response.json();
-      setCategories(data.categories.map(item => ({ id: item.id, name: item.category, icon: item.icon })));
+      setCategories(
+        data.categories.map(item => ({
+          id: item.id,
+          name: item.category,
+          icon: item.icon,
+        }))
+      );
     } catch (error) {
       console.error('Fetch error:', error);
       setError(error);

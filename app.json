@@ -2,11 +2,12 @@
   "expo": {
     "name": "frontend",
     "slug": "frontend",
+    "projectId": "frontend-surgicalm",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true, 
+    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -14,7 +15,10 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.SurgiCalm.Englewood"
+      "bundleIdentifier": "com.SurgiCalm.Englewood",
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -24,6 +28,14 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-secure-store"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "eb94781a-5040-4c76-8e2b-40ba048cbbdf"
+      }
     }
   }
 }

@@ -3,9 +3,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import CustomInput from '../../Components/CustomInput';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {getSecureItem, saveSecureItem} from "../../Components/Memory"
-import { get } from 'react-native/Libraries/TurboModule/TurboModuleRegistry';
-import { BASE_URL } from '@env';
+import { useFetchWithAuth } from '../../Components/FetchWithAuth';
 
 // import Orientation from 'react-native-orientation-locker';  // Developer Mode
 
@@ -16,56 +14,20 @@ const AccountCreation = () => {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
+  const { fetchWithAuth } = useFetchWithAuth();
+
   const handleSubmit = async () => {
-
     try {
-      // Step 1: Retrieve access token from AsyncStorage
-      let token = await getSecureItem('accessNurse');
-      
-      // Step 2: Define function for making registration request
-      const makeRequest = async (token) => {
-        return await fetch(`${BASE_URL}/users/patient/register/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : undefined,
-          },
-          body: JSON.stringify({
-            email,
-            username,
-            password,
-            password2: confirmPassword,
-          }),
-        });
-      };
+      const response = await fetchWithAuth('/users/patient/register/', {
+        method: 'POST',
+        body: JSON.stringify({
+          email,
+          username,
+          password,
+          password2: confirmPassword,
+        }),
+      });
 
-      // Step 3: Make the registration request
-      let response = await makeRequest(token);
-
-      // Step 4: Check if response status is 401 and refresh the token if necessary
-      if (response.status === 401) {
-        const refreshToken = await getSecureItem('refreshNurse');
-        if (!refreshToken) throw new Error('No refresh token found');
-
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-
-        if (!refreshResponse.ok) throw new Error('Failed to refresh token');
-
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem('accessNurse', refreshData.access);
-        token = refreshData.access;
-
-        // Retry the registration request with the new token
-        response = await makeRequest(token);
-      }
-
-      // Step 5: Handle the response
       const data = await response.json();
 
       if (response.ok) {
@@ -75,6 +37,7 @@ const AccountCreation = () => {
       }
     } catch (error) {
       Alert.alert('Error', 'Failed to create account. Please try again later.');
+      console.error('Account creation error:', error);
     }
   };
 

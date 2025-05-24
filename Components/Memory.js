@@ -26,3 +26,8 @@ export const deleteSecureItem = async (key) => {
     console.error(`Error deleting ${key} from SecureStore:`, error);
   }
 };
+
+export const clearTokens = async () => {
+  await SecureStore.deleteItemAsync('accessPatient');
+  await SecureStore.deleteItemAsync('refreshPatient');
+};

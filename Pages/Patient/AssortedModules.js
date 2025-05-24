@@ -5,8 +5,7 @@ import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/nativ
 import Icon from 'react-native-vector-icons/Ionicons';
 import Logo from '../../Images/Logo.png';
 import miniLogo from '../../Images/mini_logo.png';
-import {getSecureItem, saveSecureItem} from "../../Components/Memory"
-import { BASE_URL } from '@env';
+import { useFetchWithAuth } from '../../Components/FetchWithAuth';
 
 
 
@@ -26,6 +25,7 @@ const AssortedModules = () => {
   const route = useRoute();
   const { categoryId, subcategoryId, subcategory } = route.params;
   const {width, _ } = Dimensions.get("window") 
+  const { getJSON } = useFetchWithAuth();
 
   useFocusEffect(
     useCallback(() => {
@@ -35,48 +35,8 @@ const AssortedModules = () => {
 
   const fetchModules = async () => {
     try {
-      let token = await getSecureItem('accessPatient');
-      if (!token) throw new Error('No access token found');
-
-      let response = await fetch(`${BASE_URL}/users/${categoryId}/${subcategoryId}/modules-list/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        const refreshToken = await getSecureItem('refreshPatient');
-        if (!refreshToken) throw new Error('No refresh token found');
-
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-
-        if (!refreshResponse.ok) throw new Error('Failed to refresh token');
-
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem('accessPatient', refreshData.access);
-        token = refreshData.access;
-
-        response = await fetch(`${BASE_URL}/users/${categoryId}/${subcategoryId}/modules-list/`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-      }
-
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-      const data = await response.json();
-      console.log(data)
+      const data = await getJSON(`/users/${categoryId}/${subcategoryId}/modules-list/`);
+      console.log(data);
 
       // Mapping video titles and URLs
       const videoData = data.videos ? data.videos.map(video => ({
@@ -85,13 +45,12 @@ const AssortedModules = () => {
         description: video.description,
       })) : [];
       setVideos(videoData);
-
     } catch (error) {
       console.error('Fetch error:', error);
       setError(error);
     } finally {
       setLoading(false);
-      console.log(videos)
+      console.log(videos);
     }
   };
 

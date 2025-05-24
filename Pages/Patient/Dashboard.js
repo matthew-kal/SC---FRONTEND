@@ -5,11 +5,8 @@ import { useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
 import Graph from '../../Components/Graph.js';
 import Logo from '../../Images/Logo.png';
-import {getSecureItem, saveSecureItem} from "../../Components/Memory"
 import { PatientContext } from '../../Components/PatientContext';
-import { BASE_URL } from '@env';
-
-
+import { useFetchWithAuth } from '../../Components/FetchWithAuth.js';
 
 const Dashboard = ({ navigation }) => {
   const [dashboardData, setDashboardData] = useState([]);
@@ -23,6 +20,7 @@ const Dashboard = ({ navigation }) => {
   const [quote, setQuote] = useState(''); 
   const { refresh, setRefresh, date, setDate } = useContext(PatientContext);
   const {width} = Dimensions.get("window")
+  const { getJSON, fetchWithAuth } = useFetchWithAuth();
   const w = 295;
   const h = 70;
   const logoWidth = width < 400 ? w * 0.85 : w;
@@ -30,47 +28,8 @@ const Dashboard = ({ navigation }) => {
   
   const fetchDashboardData = async () => {
     try {
-      let token = await getSecureItem('accessPatient');
-      if (!token) throw new Error('No access token found');
-  
-      let response = await fetch(`${BASE_URL}/users/dashboard/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-  
-      if (response.status === 401) {
-        const refreshToken = await getSecureItem('refreshPatient');
-        if (!refreshToken) throw new Error('No refresh token found');
-  
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-  
-        if (!refreshResponse.ok) throw new Error(`Failed to refresh token: ${refreshResponse.statusText}`);
-  
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem('accessPatient', refreshData.access);
-        token = refreshData.access;
-  
-        response = await fetch(`${BASE_URL}/users/dashboard/`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-      }
-  
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-  
-      const {generalVideos, tasks, quote, weekData } = await response.json();
+      const { generalVideos, tasks, quote, weekData } = await getJSON('/users/dashboard/');
+
       setDashboardData(generalVideos || []);
       setTaskModuleData(tasks || []);
       setQuote(quote.quote);
@@ -84,7 +43,7 @@ const Dashboard = ({ navigation }) => {
         { x: 'Su', y: weekData.sun || 0 },
       ]);
       setDailyData([weekData.week || 0, weekData.all_time || 0]);
-  
+
     } catch (error) {
       console.error('Fetch error:', error.message);
       setError(error.message);
@@ -121,45 +80,11 @@ const Dashboard = ({ navigation }) => {
 
   const handleTask = useCallback(async (taskId) => {
     try {
-      let token = await getSecureItem('accessPatient');
-      if (!token) throw new Error('No access token found');
-  
-      const response = await fetch(`${BASE_URL}/users/tasks/update-completion/${taskId}/`, {
+      const response = await fetchWithAuth(`/users/tasks/update-completion/${taskId}/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        }
       });
-  
-      if (response.status === 401) {
-        const refreshToken = await getSecureItem('refreshPatient');
-        if (!refreshToken) throw new Error('No refresh token found');
-  
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-  
-        if (!refreshResponse.ok) throw new Error('Failed to refresh token');
-  
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem('accessPatient', refreshData.access);
-        token = refreshData.access;
 
-        const retryCompletionResponse = await fetch(`${BASE_URL}/users/tasks/update-completion/${taskId}/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          }
-        });
-  
-        if (!retryCompletionResponse.ok) throw new Error(`HTTP error! Status: ${retryCompletionResponse.status}`);
-      } else if (!response.ok) {
+      if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
 
@@ -169,11 +94,10 @@ const Dashboard = ({ navigation }) => {
         )
       );
 
-  
     } catch (error) {
       console.error('Fetch error:', error);
     }
-  }, [navigation]);
+  }, [fetchWithAuth]);
 
   if (loading || isNavigating) {
     return (

@@ -2,12 +2,10 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { Video } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
-import ConfettiCannon from 'react-native-confetti-cannon';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const AssortedPlayer = ({ route, navigation }) => {
   const { videoUrl, videoTitle, videoDescription } = route.params;
-  const [confettiVisible, setConfettiVisible] = useState(false);
 
   return (
     <View style={styles.container}>
@@ -39,16 +37,6 @@ const AssortedPlayer = ({ route, navigation }) => {
           <Icon name={"checkmark-outline"} style={styles.icon} size={25} color="#AA336A" />
         </TouchableOpacity>
 
-        {confettiVisible && (
-          <View style={styles.confettiContainer}>
-            <ConfettiCannon
-              count={200}
-              origin={{ x: 0, y: 0 }}
-              colors={['#AA336A', '#FFFFFF']}
-              fadeOut
-            />
-          </View>
-        )}
       </LinearGradient>
     </View>
   );

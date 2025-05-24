@@ -12,7 +12,17 @@ const PasswordRecovery = ({ navigation }) => {
         Cairo_700Bold,
     });
 
+    const isValidEmail = (email) => {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email.toLowerCase());
+    };
+
     const handlePasswordRecovery = async () => {
+        if (!email || !isValidEmail(email)) {
+            Alert.alert('Error', 'Please enter a valid email address.');
+            return;
+        }
+
         if (email) {
             // Simulate an API call
             try {
@@ -25,9 +35,9 @@ const PasswordRecovery = ({ navigation }) => {
                 });
 
                 if (response.status === 200) {
-                    Alert.alert('Success', 'A recovery email has been sent to ' + email);
+                    Alert.alert('Success', 'If that account exists, a password reset link has been sent to ' + email);
                 } else {
-                    Alert.alert('Error', 'Failed to send recovery email. Please try again.');
+                    Alert.alert('Error', 'Failed to send recovery email. Please try again later.');
                 }
             } catch (error) {
                 console.error(error);

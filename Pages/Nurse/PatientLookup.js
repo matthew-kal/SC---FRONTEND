@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {getSecureItem, saveSecureItem} from "../../Components/Memory"
-import { BASE_URL } from '@env';
+import { useFetchWithAuth } from '../../Components/FetchWithAuth';
 
 const PatientLookup = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -12,50 +11,13 @@ const PatientLookup = ({ navigation }) => {
   const [searchBy, setSearchBy] = useState('username'); 
   const { width } = Dimensions.get('window');
   const filterWidth = width > 450 ? '40%' : '90%'
+  const { getJSON, fetchWithAuth } = useFetchWithAuth();
 
   const searchPatients = async () => {
-    if (!searchQuery) {
-      return; 
-    }
-    
+    if (!searchQuery) return;
+
     try {
-      let token = await getSecureItem('accessNurse');
-
-      const makeRequest = async (token) => {
-        return await fetch(`${BASE_URL}/users/patients-list/?searchBy=${searchBy}&query=${searchQuery}`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': token ? `Bearer ${token}` : undefined,
-          },
-        });
-      };
-
-      let response = await makeRequest(token);
-
-      if (response.status === 401) {
-        const refreshToken = await getSecureItem('refreshNurse');
-        if (!refreshToken) throw new Error('No refresh token found');
-
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-
-        if (!refreshResponse.ok) throw new Error('Failed to refresh token');
-
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem('accessNurse', refreshData.access);
-        token = refreshData.access;
-
-        response = await makeRequest(token);
-      }
-
-      if (!response.ok) throw new Error('Network response was not ok');
-      const data = await response.json();
+      const data = await getJSON(`/users/patients-list/?searchBy=${searchBy}&query=${searchQuery}`);
       setPatients(data);
       setSearchAttempted(true);
     } catch (error) {
@@ -67,56 +29,11 @@ const PatientLookup = ({ navigation }) => {
 
   const getGraphData = async (id) => {
     try {
-      let token = await getSecureItem("accessNurse"); // Use accessNurse instead of accessPatient
-      if (!token) throw new Error("No access token found");
-  
-      let response = await fetch(`${BASE_URL}/users/patient-graph/${id}/`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-      });
-  
-      // If access token is expired, attempt to refresh it
-      if (response.status === 401) {
-        console.warn("Access token expired. Attempting to refresh...");
-        const refreshToken = await getSecureItem("refreshNurse"); // Use refreshNurse instead of refreshPatient
-        if (!refreshToken) throw new Error("No refresh token found");
-  
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-  
-        if (!refreshResponse.ok) throw new Error("Failed to refresh token");
-  
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem("accessNurse", refreshData.access); // Save new access token
-  
-        // Retry original request with new access token
-        response = await fetch(`${BASE_URL}/users/patient-graph/${id}/`, {
-          method: "GET",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${refreshData.access}`,
-          },
-        });
-      }
-  
-      if (!response.ok) throw new Error("Failed to fetch graph data");
-  
-      const data = await response.json();
-
-
-      return data.weekData || {}; 
-  
+      const data = await getJSON(`/users/patient-graph/${id}/`);
+      return data.weekData || {};
     } catch (error) {
       console.error("Error fetching graph data:", error);
-      return {}; 
+      return {};
     }
   };
   

@@ -5,8 +5,7 @@ import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/nativ
 import Icon from 'react-native-vector-icons/Ionicons';
 import Logo from '../../Images/Logo.png';
 import miniLogo from '../../Images/mini_logo.png';
-import {getSecureItem, saveSecureItem} from "../../Components/Memory"
-import { BASE_URL } from '@env';
+import { useFetchWithAuth } from '../../Components/FetchWithAuth';
 
 const SubCategory = ({ text, handlePress }) => {
   return (
@@ -27,6 +26,7 @@ const AssortedSubcategories = () => {
   const { categoryName, categoryId } = route.params;
   const scrollViewRef = useRef(null); 
   const {width, _ } = Dimensions.get("window") 
+  const { getJSON } = useFetchWithAuth();
 
   useFocusEffect(
     useCallback(() => {
@@ -37,55 +37,17 @@ const AssortedSubcategories = () => {
 
   const fetchSubcategories = async () => {
     try {
-      let token = await getSecureItem('accessPatient');
-      if (!token) throw new Error('No access token found');
-
-      let response = await fetch(`${BASE_URL}/users/${categoryId}/subcategories/`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (response.status === 401) {
-        const refreshToken = await getSecureItem('refreshPatient');
-        if (!refreshToken) throw new Error('No refresh token found');
-
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-
-        if (!refreshResponse.ok) throw new Error('Failed to refresh token');
-
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem('accessPatient', refreshData.access);
-        token = refreshData.access;
-
-        response = await fetch(`${BASE_URL}/users/${categoryId}/subcategories/`, {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-      }
-
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
-      const data = await response.json();
-      setSubcategories(data.subcategories.map(item => ({ subcategoryId: item.id, name: item.subcategory})));
-
+      const data = await getJSON(`/users/${categoryId}/subcategories/`);
+      setSubcategories(data.subcategories.map(item => ({
+        subcategoryId: item.id,
+        name: item.subcategory,
+      })));
     } catch (error) {
       console.error('Fetch error:', error);
       setError(error);
     } finally {
       setLoading(false);
-      console.log(subcategories)
+      console.log(subcategories);
     }
   };
 

@@ -1,108 +1,32 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getSecureItem, saveSecureItem, deleteSecureItem} from './Memory';
-import { BASE_URL } from '@env';
+import { getSecureItem, deleteSecureItem } from './Memory';
+import { TokenContext } from './TokenContext'
+import { useFetchWithAuth } from './FetchWithAuth';
 
 const NurseNavbar = () => {
   const navigation = useNavigation();
   const route = useRoute();
+  const { setUserType } = useContext(TokenContext);
 
-  // Main logout function
+  const { fetchWithAuth } = useFetchWithAuth();
   const mainLogout = async () => {
-    await Logout();
-    navigation.replace('Login');
-  };
-
-  // Retrieve tokens from AsyncStorage
-  const getTokens = async () => {
     try {
-      const accessToken = await getSecureItem('accessNurse');
       const refreshToken = await getSecureItem('refreshNurse');
-      return { accessToken, refreshToken };
-    } catch (error) {
-      console.error('Failed to retrieve tokens', error);
-      return { accessToken: null, refreshToken: null };
-    }
-  };
-
-  // Clear tokens from AsyncStorage
-  const clearTokens = async () => {
-    try {
-      await deleteSecureItem('accessNurse');
-      await deleteSecureItem('refreshNurse');
-    } catch (error) {
-      console.error('Failed to clear tokens', error);
-    }
-  };
-
-  // Refresh the access token using refresh token
-  const refreshAccessToken = async (refreshToken) => {
-    try {
-      const response = await fetch(`${BASE_URL}/users/token/refresh/1`, {
+      await fetchWithAuth('/users/logout/', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh: refreshToken }),
       });
-
-      if (response.ok) {
-        const data = await response.json();
-        await saveSecureItem('accessNurse', data.access);
-        return data.access;
-      } else {
-        await clearTokens(); // Clear tokens if refresh fails
-        return null;
-      }
-    } catch (error) {
-      console.error('Failed to refresh access token:', error);
-      return null;
-    }
-  };
-
-  // Logout function
-  const Logout = async () => {
-    try {
-      let { accessToken, refreshToken } = await getTokens();
-
-      if (!refreshToken) {
-        console.error('No refresh token found');
-        return;
-      }
-
-      let response = await fetch(`${BASE_URL}/users/logout/`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
-        },
-        body: JSON.stringify({ refresh: refreshToken }),
-      });
-
-      if (response.status === 401) {
-        accessToken = await refreshAccessToken(refreshToken);
-
-        if (accessToken) {
-          response = await fetch(`${BASE_URL}/users/logout/`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${accessToken}`,
-            },
-            body: JSON.stringify({ refresh: refreshToken }),
-          });
-        }
-      }
-
-      if (response.ok) {
-        await clearTokens();
-      } else {
-        console.error('Logout failed:', await response.json());
-      }
     } catch (error) {
       console.error('Logout failed:', error);
+    } finally {
+      await deleteSecureItem('accessNurse');
+      await deleteSecureItem('refreshNurse');
+      setUserType('');
+      navigation.replace('Login');
     }
   };
 

@@ -4,18 +4,20 @@ import { Video } from 'expo-av';
 import { LinearGradient } from 'expo-linear-gradient';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import Icon from 'react-native-vector-icons/Ionicons';
-import {getSecureItem, saveSecureItem} from "../../Components/Memory"
+import { useFetchWithAuth } from '../../Components/FetchWithAuth';
 import Logo from '../../Images/mini_logo.png';
 import { PatientContext } from '../../Components/PatientContext';
-import { BASE_URL } from '@env';
 
 
 const DashPlayer = ({ route, navigation }) => {
   const { videoUrl, videoTitle, videoId, videoDescription, isCompleted} = route.params; 
   const [confettiVisible, setConfettiVisible] = useState(false);
   const videoRef = useRef(null);
-  const {width, height } = Dimensions.get("window")
+  const { width, height } = Dimensions.get("window")
   const { refresh, setRefresh } = useContext(PatientContext);
+  const { getJSON } = useFetchWithAuth();
+  const submitted = useRef(false)
+
 
   const handlePlaybackStatusUpdate = async (playbackStatus) => {
 
@@ -34,63 +36,25 @@ const DashPlayer = ({ route, navigation }) => {
   };
 
   const handleCompletePress = useCallback(async () => {
+    if (submitted.current) return;
+    submitted.current = true;
     try {
-      let token = await getSecureItem('accessPatient');
-      if (!token) throw new Error('No access token found');
-
-      const response = await fetch(`${BASE_URL}/users/update_video_completion/${videoId}/`, {
+      await getJSON(`/users/update_video_completion/${videoId}/`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({ isCompleted: true }),
       });
 
-      if (response.status === 401) {
-        const refreshToken = await getSecureItem('refreshPatient');
-        if (!refreshToken) throw new Error('No refresh token found');
-
-        const refreshResponse = await fetch(`${BASE_URL}/users/token/refresh/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ refresh: refreshToken }),
-        });
-
-        if (!refreshResponse.ok) throw new Error('Failed to refresh token');
-
-        const refreshData = await refreshResponse.json();
-        await saveSecureItem('accessPatient', refreshData.access);
-        token = refreshData.access;
-
-        const retryCompletionResponse = await fetch(`${BASE_URL}/users/update_video_completion/${videoId}/`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-          },
-          body: JSON.stringify({ isCompleted: true }),
-        });
-
-        if (!retryCompletionResponse.ok) throw new Error(`HTTP error! Status: ${retryCompletionResponse.status}`);
-      } else if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-      
- 
       setConfettiVisible(true);
-      setRefresh(true)
+      setRefresh(true);
       setTimeout(() => {
         setConfettiVisible(false);
         navigation.navigate('Dashboard');
       }, 3000);
-
     } catch (error) {
       console.error('Fetch error:', error);
+      submitted.current = false;
     }
-  }, [navigation, videoTitle, videoDescription]);
+  }, [getJSON, navigation, videoId, setRefresh]);
 
   return (
     <View style={styles.container}>
@@ -128,7 +92,7 @@ const DashPlayer = ({ route, navigation }) => {
 
         <View style={styles.buttonContainer}>
           {!isCompleted && (
-          <TouchableOpacity onPress={handleCompletePress} style={styles.button}>
+          <TouchableOpacity onPress={handleCompletePress} style={styles.button} disabled={submitted.current}>
             <Icon name={"checkmark-outline"} style={styles.icon} size={25} color="#AA336A" />
           </TouchableOpacity>
           )}

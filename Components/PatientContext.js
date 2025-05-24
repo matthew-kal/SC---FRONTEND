@@ -11,7 +11,7 @@ export const PatientProvider = ({ children }) => {
         <PatientContext.Provider 
         value={{ 
             refresh, setRefresh, 
-            date, setDate 
+            date, setDate
             }}> 
           {children}
         </PatientContext.Provider>

@@ -1,10 +1,11 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import { BASE_URL } from '@env';
-import { Platform } from 'react-native';
+import { getSecureItem } from '../Components/Memory';
 
-export async function registerForPushNotificationsAsync(userAuthToken) {
-  let token;
+export async function registerForPushNotificationsAsync() {
+    const accessToken = await getSecureItem('accessPatient');
+    const refreshToken = await getSecureItem('refreshPatient');
 
   console.log("🔥 Inside `registerForPushNotificationsAsync`...");
 
@@ -42,7 +43,7 @@ export async function registerForPushNotificationsAsync(userAuthToken) {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${userAuthToken}`, 
+          'Authorization': `Bearer ${accessToken}`, 
         },
         body: JSON.stringify({ pushToken: token }),
       });
@@ -59,15 +60,6 @@ export async function registerForPushNotificationsAsync(userAuthToken) {
   } else {
     console.log('⚠️ Must use physical device for push notifications');
   }
-
-  if (Platform.OS === 'android') {
-  await Notifications.setNotificationChannelAsync('default', {
-    name       : 'default',
-    importance : Notifications.AndroidImportance.MAX,
-    vibrationPattern: [0, 250, 250, 250],
-    lightColor : '#FF231F7C',
-  });
-}
 
   return token;
 }

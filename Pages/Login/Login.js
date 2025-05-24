@@ -8,7 +8,8 @@ import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/ca
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Logo from '../../Images/Logo.png'; 
 import { PatientContext } from '../../Components/PatientContext';
-import { registerForPushNotificationsAsync, scheduleLocalNotification } from '../../Services/notifications';
+import { TokenContext } from '../../Components/TokenContext';
+import { registerForPushNotificationsAsync } from '../../Services/notifications';
 import { BASE_URL } from '@env';
 
 
@@ -54,6 +55,7 @@ const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, pa
 const Login = () => {
   const navigation = useNavigation();
   const { refresh, setRefresh } = useContext(PatientContext);
+  const { setUserType } = useContext(TokenContext);
   const { width } = Dimensions.get('window');
   const dynamicStyles = width < 450 ? styles.smallScreen : styles.largeScreen;
   
@@ -84,17 +86,9 @@ const Login = () => {
   
   const checkPatientLoginStatus = async () => {
   
-    const accessToken = await getSecureItem('accessPatient');
     const refreshToken = await getSecureItem('refreshPatient');
   
-    if (accessToken) {
-      setRefresh(true)
-      await registerForPushNotificationsAsync(accessToken);
-      navigation.navigate('PatientNavigation', {
-        screen: 'PatientDashboard'
-      });
-    } 
-    else if (refreshToken) {
+    if (refreshToken) {
       await refreshPatientAccessToken(refreshToken);
     } 
   }; 
@@ -111,7 +105,7 @@ const Login = () => {
         const data = await response.json();
         await saveSecureItem("accessPatient", data.access);
         setRefresh(true)
-        await registerForPushNotificationsAsync(data.access)
+        setUserType('patient');
         navigation.navigate('PatientNavigation', {
           screen: 'PatientDashboard'
         });
@@ -136,7 +130,6 @@ const Login = () => {
 
 useFocusEffect(
   useCallback(() => {
-    checkPatientLoginStatus();
     setNurseUsername('');
     setNursePassword('');
     setPatientUsername('');
@@ -148,6 +141,10 @@ useFocusEffect(
 );
 
   const handleNurseLogin = async () => {
+    if (!nurseUsername || !nursePassword){
+      Alert.alert("Enter both fields");
+      return;
+    }
     try {
       const response = await fetch(`${BASE_URL}/users/nurse/login/`, {
         method: 'POST',
@@ -161,7 +158,7 @@ useFocusEffect(
         const data = await response.json();
         await saveSecureItem('accessNurse', data.access);
         await saveSecureItem('refreshNurse', data.refresh);
-        
+        setUserType('nurse');
         navigation.navigate('NurseNavigation', { screen: 'AccountCreation' });
       } else {
         setError('Login failed');
@@ -175,7 +172,10 @@ useFocusEffect(
   };
 
   const handlePatientLogin = async () => {
-    console.log(BASE_URL)
+    if (!patientUsername || !patientPassword){
+      Alert.alert("Please enter both fields");
+      return;
+    }
     try {
       const response = await fetch(`${BASE_URL}/users/patient/login/`, {
         method: 'POST',
@@ -189,19 +189,14 @@ useFocusEffect(
         const data = await response.json();
         await saveSecureItem('accessPatient', data.access);
         await saveSecureItem('refreshPatient', data.refresh);
-  
-        console.log("✅ Login successful, calling push token registration...");
-        
-        console.log("✅ Login successful, calling push token registration...");
-
-        // 🔥 Ensure the function is called
-      console.log("🔥 Calling `registerForPushNotificationsAsync` now...");
-
+        setUserType('patient');
         // ✅ Register push token
-        await registerForPushNotificationsAsync(data.access);
+        // await registerForPushNotificationsAsync();
 
         console.log("🚀 `registerForPushNotificationsAsync` executed successfully!");
         setRefresh(true)
+        console.log(getSecureItem('accessPatient'));
+        console.log(getSecureItem('refreshPatient'));
         navigation.navigate('PatientNavigation', { screen: 'PatientDashboard' });
       } else {
         console.log("❌ Login failed. Response:", await response.text());
