@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { getSecureItem, deleteSecureItem } from '../../Components/Memory';
+import { getSecureItem, deleteSecureItem, clearTokens } from '../../Components/Memory';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import { Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -8,6 +8,8 @@ import CustomInput from '../../Components/CustomInput';
 import { TokenContext } from '../../Components/TokenContext';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useFetchWithAuth } from '../../Components/FetchWithAuth';
+import PrivacyPolicy from '../../Components/PrivacyPolicy';
+import Logout from '../../Components/Logout';
 
 
 const PatientSettings = () => {
@@ -29,32 +31,6 @@ const PatientSettings = () => {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deletePassword, setDeletePassword] = useState('');
 
-  const mainLogout = async () => {
-  try {
-    await Logout();
-    setUserType('');
-  } catch (e) {
-    console.error('Logout error:', e);
-  } finally {
-    await clearTokens();
-    
-    navigation.replace('Login');
-  }
-  };
-  
-  const Logout = async () => {
-    try {
-      const refreshToken = await getSecureItem('refreshPatient');
-      if (!refreshToken) return;
-      await fetchWithAuth('/users/logout/', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ refresh: refreshToken }),
-      });
-    } catch (err) {
-      console.error('Logout failed:', err);
-    }
-  };
 
   const deleteAccount = async () => {
     if (!deletePassword) {
@@ -84,19 +60,6 @@ const PatientSettings = () => {
       Alert.alert('Error', 'Please logout, log back in, and try again.');
     }
   };
-
-  const clearTokens = async () => {
-    try {
-      await deleteSecureItem('accessPatient');
-      await deleteSecureItem('refreshPatient');
-      console.log('Cleared Tokens');
-      console.log(getSecureItem('accessPatient'))
-      console.log(getSecureItem('refreshPatient'))
-    } catch (error) {
-      console.error('Failed to clear tokens', error);
-    }
-  };
-
 
   const fetchSettingsData = async () => {
     setLoading(true);
@@ -216,18 +179,10 @@ const PatientSettings = () => {
           <Text style={styles.buttonText}>Change Password</Text>
         </TouchableOpacity>
         
-        <Text style={styles.title}>Logout</Text>
-        <TouchableOpacity style={styles.logout} onPress={() => mainLogout()}>
-        <Icon
-                          name={'log-out-outline'}
-                          style={styles.icon}
-                          size={25}
-                          color={"#AA336A"}
-                        />
-        </TouchableOpacity>
+        <Logout/>
 
         <Text style={styles.title}>Delete Account</Text>
-            <TouchableOpacity style={[styles.logout, width >= 450 ? { marginBottom: 200 } : { marginBottom: 0 } ]} onPress={() => setShowDeleteModal(true)}>
+            <TouchableOpacity style={styles.logout} onPress={() => setShowDeleteModal(true)}>
         <Icon
                           name={'trash-outline'}
                           style={styles.icon}
@@ -283,6 +238,7 @@ const PatientSettings = () => {
       </View>
     </Modal>
   )}
+  <PrivacyPolicy style={width >= 450 ? { marginBottom: 200 } : { marginBottom: 0 }} />
       </ScrollView>
       </LinearGradient>
     </View>

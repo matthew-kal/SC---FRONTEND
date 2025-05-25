@@ -32,29 +32,31 @@ const DashPlayer = ({ route, navigation }) => {
       await videoRef.current.pauseAsync();
     }
     console.log(isCompleted)
+    console.log(submitted)
     navigation.navigate('Dashboard')
   };
 
-  const handleCompletePress = useCallback(async () => {
-    if (submitted.current) return;
-    submitted.current = true;
-    try {
-      await getJSON(`/users/update_video_completion/${videoId}/`, {
-        method: 'POST',
-        body: JSON.stringify({ isCompleted: true }),
-      });
+const handleCompletePress = useCallback(async () => {
+  if (submitted.current) return;
+  submitted.current = true;
+  try {
+    await getJSON(`/users/update_video_completion/${videoId}/`, {
+      method: 'POST',
+      body: JSON.stringify({ isCompleted: true }),
+    });
 
-      setConfettiVisible(true);
-      setRefresh(true);
-      setTimeout(() => {
-        setConfettiVisible(false);
-        navigation.navigate('Dashboard');
-      }, 3000);
-    } catch (error) {
-      console.error('Fetch error:', error);
-      submitted.current = false;
-    }
-  }, [getJSON, navigation, videoId, setRefresh]);
+    setConfettiVisible(true);
+    setRefresh(true);
+    setTimeout(() => {
+      setConfettiVisible(false);
+      submitted.current = false;  // ✅ Reset after success
+      navigation.navigate('Dashboard');
+    }, 3000);
+  } catch (error) {
+    console.error('Fetch error:', error);
+    submitted.current = false;  // Also reset on failure
+  }
+}, [getJSON, navigation, videoId, setRefresh]);
 
   return (
     <View style={styles.container}>

@@ -44,8 +44,8 @@ const NurseNavbar = () => {
       <TouchableOpacity style={styles.button} onPress={() => handleNavigation('PatientLookup')}>
         <Icon name="search-outline" size={25} color="#AA336A" />
       </TouchableOpacity>
-      <TouchableOpacity style={styles.button} onPress={mainLogout}>
-        <Icon name="log-out-outline" size={25} color="#AA336A" />
+      <TouchableOpacity style={styles.button} onPress={() => handleNavigation('NurseSettings')}>
+        <Icon name="settings-outline" size={25} color="#AA336A" />
       </TouchableOpacity>
     </View>
   );

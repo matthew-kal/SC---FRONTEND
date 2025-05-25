@@ -2,7 +2,8 @@ import React, { useContext } from 'react';
 import { getSecureItem, clearTokens, saveSecureItem } from './Memory';
 import { TokenContext } from './TokenContext';
 import { BASE_URL } from '@env';
-import { useNavigation } from '@react-navigation/native';
+import { CommonActions } from '@react-navigation/native';
+import { navigationRef } from '../App';
 
 const refreshAccessToken = async (refreshToken) => {
   try {
@@ -13,11 +14,6 @@ const refreshAccessToken = async (refreshToken) => {
     });
     if (!response.ok) return null;
     const data = await response.json();
-    
-    await saveSecureItem(
-      refreshToken.includes('Nurse') ? 'accessNurse' : 'accessPatient',
-      data.access
-    );
     return data.access;
   } catch (err) {
     console.error('[FetchWithAuth] Refresh token request failed:', err);
@@ -37,7 +33,6 @@ const rawFetch = (endpoint, token, options = {}) =>
 
 
 export const useFetchWithAuth = () => {
-  const navigation = useNavigation();
   const { userType, setUserType } = useContext(TokenContext);
 
   const fetchWithAuth = async (endpoint, options = {}) => {
@@ -52,7 +47,12 @@ export const useFetchWithAuth = () => {
     if (!accessToken || !refreshToken) {
       await clearTokens();
       setUserType('');
-      navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+      navigationRef.current?.dispatch(
+        CommonActions.reset({
+          index: 0,
+          routes: [{ name: 'Login' }],
+        })
+      );
       throw new Error('No authentication tokens found.');
     }
 
@@ -64,9 +64,15 @@ export const useFetchWithAuth = () => {
       if (!newAccess) {
         await clearTokens();
         setUserType('');
-        navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
+        if (navigationRef.current) {
+          navigationRef.current.dispatch(
+          CommonActions.reset({ index:0, routes:[{name:'Login'}] })
+            );
+          }
         throw new Error('Session expired.');
       }
+      // Persist refreshed access token under correct key
+      await saveSecureItem(accessKey, newAccess);
       response = await rawFetch(endpoint, newAccess, options);
     }
 

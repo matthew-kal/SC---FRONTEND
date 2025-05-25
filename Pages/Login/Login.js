@@ -17,6 +17,17 @@ const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, pa
   const navigation = useNavigation();
   const { width } = Dimensions.get('window');
   const innerSizer = width < 400 ? 22 : 25;
+  const [loginDisabled, setLoginDisabled] = useState(false);
+
+  const handleLoginPress = () => {
+  if (username && password) {
+    setLoginDisabled(true);
+    onSubmit();  // call the parent handler
+    setTimeout(() => setLoginDisabled(false), 4000);
+  } else {
+    onSubmit();  
+  }
+};
   return (
     <View style={styles.buttonContainer}>
       <CustomInput
@@ -35,8 +46,18 @@ const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, pa
 
       {/* Buttons Side by Side */}
       <View style={[styles.loginButtons, {marginRight: isPatient ? 30 : 0}]}>
-        <TouchableOpacity style={[styles.finalLogin, styles.halfWidthButton,]} onPress={onSubmit}>
-          <Text style={[styles.innerFinal, {fontSize: innerSizer}]}>Login</Text>
+         <TouchableOpacity
+          style={[
+            styles.finalLogin,
+            styles.halfWidthButton,
+            loginDisabled && { opacity: 0.5 },
+          ]}
+          onPress={handleLoginPress}
+          disabled={loginDisabled}
+        >
+          <Text style={[styles.innerFinal, { fontSize: innerSizer }]}>
+            Login
+          </Text>
         </TouchableOpacity>
 
         {isPatient && (

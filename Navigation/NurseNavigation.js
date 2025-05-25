@@ -6,7 +6,7 @@ import AccountCreation from '../Pages/Nurse/AccountCreation';
 import PatientLookup from '../Pages/Nurse/PatientLookup';
 import NurseNavbar from '../Components/NurseNavbar';
 import PatientDetails from '../Pages/Nurse/PatientDetails';
-import Login from '../Pages/Login/Login.js'
+import NurseSettings from '../Pages/Nurse/NurseSettings.js'
 
 const Tab = createBottomTabNavigator();
 
@@ -18,8 +18,7 @@ const NurseNavigation = () => {
             <Tab.Screen name="AccountCreation" component={AccountCreation} />
             <Tab.Screen name="PatientLookup" component={PatientLookup} />
             <Tab.Screen name="PatientDetails" component={PatientDetails} />
-            <Tab.Screen name="Login" component={Login} />
-
+            <Tab.Screen name="NurseSettings" component={NurseSettings}/>
           </Tab.Navigator>
         </View>
     </View>

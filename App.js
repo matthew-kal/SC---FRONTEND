@@ -10,7 +10,7 @@ import { TokenProvider } from './Components/TokenContext';
 
 const Stack = createStackNavigator();
 
-const navigationRef = React.createRef();
+export const navigationRef = React.createRef();
 
 const App = () => {
   return (

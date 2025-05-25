@@ -28,6 +28,16 @@ export const deleteSecureItem = async (key) => {
 };
 
 export const clearTokens = async () => {
-  await SecureStore.deleteItemAsync('accessPatient');
-  await SecureStore.deleteItemAsync('refreshPatient');
+  try {
+    const access = await SecureStore.getItemAsync('accessPatient');
+    const refresh = await SecureStore.getItemAsync('refreshPatient');
+    if (access !== null) {
+      await SecureStore.deleteItemAsync('accessPatient');
+    }
+    if (refresh !== null) {
+      await SecureStore.deleteItemAsync('refreshPatient');
+    }
+  } catch (error) {
+    console.error('Error clearing patient tokens:', error);
+  }
 };

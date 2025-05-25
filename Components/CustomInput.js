@@ -72,17 +72,19 @@ const CustomInput = ({ containerStyle, placeholder, onChangeText, error, ...prop
         <Animated.Text style={[styles.label, labelStyle]}>{placeholder}</Animated.Text>
         <View style={styles.inputContainer}>
           <TextInput
-            {...props}
-            style={[styles.input, { color: 'white' }]} 
-            onFocus={handleFocus}
-            onBlur={handleBlur}
-            onChangeText={handleTextChange}
-            value={text}
-            textAlignVertical="center"
-            textContentType={props.secureTextEntry ? 'newPassword' : props.secureTextEntry}
-            secureTextEntry={showPassword}
-            autoCapitalize="none" 
-          />
+          {...props}
+          style={[styles.input, { color: 'white' }]}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
+          onChangeText={handleTextChange}
+          value={text}
+          textAlignVertical="center"
+          secureTextEntry={showPassword}
+          textContentType={props.secureTextEntry ? 'password' : 'username'}
+          autoCompleteType={props.secureTextEntry ? 'password' : 'username'}
+          autoCorrect={false}
+          autoCapitalize="none"
+        />
           {props.secureTextEntry && !!text && (
             <View>
               <TouchableOpacity
