@@ -14,37 +14,35 @@ const PasswordRecovery = ({ navigation }) => {
 
     const isValidEmail = (email) => {
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        return emailRegex.test(email.toLowerCase());
+        return emailRegex.test(email);
     };
 
     const handlePasswordRecovery = async () => {
-        if (!email || !isValidEmail(email)) {
+        const cleanedEmail = email.trim().toLowerCase();
+        if (!cleanedEmail || !isValidEmail(cleanedEmail)) {
             Alert.alert('Error', 'Please enter a valid email address.');
             return;
         }
 
-        if (email) {
-            // Simulate an API call
-            try {
-                const response = await fetch(`${BASE_URL}/users/password-reset/`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ email }),
-                });
+        try {
+            const response = await fetch(`${BASE_URL}/users/password-reset/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ email: cleanedEmail }),
+            });
 
-                if (response.status === 200) {
-                    Alert.alert('Success', 'If that account exists, a password reset link has been sent to ' + email);
-                } else {
-                    Alert.alert('Error', 'Failed to send recovery email. Please try again later.');
-                }
-            } catch (error) {
-                console.error(error);
-                Alert.alert('Error', 'An error occurred. Please try again later.');
+            if (response.status === 200) {
+                Alert.alert('Success', `If that account exists, a password reset link has been sent to ${cleanedEmail}`);
+            } else if (response.status === 429) {
+                Alert.alert('Slow down', 'Too many requests. Please try again in about an hour.');
+            } else {
+                Alert.alert('Error', 'Failed to send recovery email. Please try again later.');
             }
-        } else {
-            Alert.alert('Error', 'Please enter a valid email address.');
+        } catch (error) {
+            console.error(error);
+            Alert.alert('Network Error', 'Unable to contact server. Please check your connection and try again.');
         }
     };
 

@@ -3,7 +3,7 @@ import { getSecureItem, clearTokens, saveSecureItem } from './Memory';
 import { TokenContext } from './TokenContext';
 import { BASE_URL } from '@env';
 import { CommonActions } from '@react-navigation/native';
-import { navigationRef } from '../App';
+import { navigationRef } from '../Navigation/NavRef';
 
 const refreshAccessToken = async (refreshToken) => {
   try {

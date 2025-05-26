@@ -14,11 +14,10 @@ const PatientNavbar = () => {
     }
   };
 
-  
-
 
   return (
     <View style={styles.navbar}>
+
       <TouchableOpacity 
         style={styles.button} 
         onPress={() => handleNavigation('Dashboard')}
@@ -39,6 +38,7 @@ const PatientNavbar = () => {
       >
         <Icon name="settings-outline" style={{marginBottom: 10}} size={25} color="#AA336A" />
       </TouchableOpacity>
+      
     </View>
   );
 };

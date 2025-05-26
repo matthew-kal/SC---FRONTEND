@@ -34,7 +34,7 @@ const PatientSettings = () => {
 
   const deleteAccount = async () => {
     if (!deletePassword) {
-      Alert.alert('Please enter a valid password');
+      Alert.alert('Please enter your password to confirm deletion.');
       return;
     }
     try {
@@ -46,18 +46,28 @@ const PatientSettings = () => {
 
       if (res.status === 204 || res.status === 200) {
         await clearTokens();
-        setShowDeleteModal(false);
+        setDeletePassword('');
         setUserType('');
+        setShowDeleteModal(false);
         navigation.replace('Login');
       } else if (res.status === 403) {
         Alert.alert('Incorrect Password', 'Please try again');
         setDeletePassword('');
       } else {
-        Alert.alert('Failed to delete account', 'Please try again later.');
+        let msg = 'Failed to delete account. Please try again later.';
+        if (res && res.ok === false) {
+          try {
+            const data = await res.json();
+            if (data && data.detail) msg = data.detail;
+          } catch {}
+        }
+        Alert.alert(msg);
+        setDeletePassword('');
       }
     } catch (err) {
       console.error('Delete error:', err);
       Alert.alert('Error', 'Please logout, log back in, and try again.');
+      setDeletePassword('');
     }
   };
 
@@ -83,15 +93,18 @@ const PatientSettings = () => {
   }, []); 
 
   const handleChangePassword = async () => {
+    if (!oldPassword || !newPassword || !confirmNewPassword) {
+      let missing = [];
+      if (!oldPassword) missing.push("old password");
+      if (!newPassword) missing.push("new password");
+      if (!confirmNewPassword) missing.push("confirm new password");
+      Alert.alert(`Please enter: ${missing.join(", ")}`);
+      return;
+    }
     if (newPassword !== confirmNewPassword) {
       Alert.alert('New password and confirm password do not match');
       return;
     }
-
-    if(!oldPassword || !newPassword || !confirmNewPassword){
-      Alert.alert("Please enter missing fields")
-    }
-
     try {
       const response = await fetchWithAuth('/users/change-password/', {
         method: 'POST',
@@ -100,9 +113,20 @@ const PatientSettings = () => {
           new_password: newPassword,
         }),
       });
-
-      if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
-
+      if (!response.ok) {
+        let msg = 'Error changing password';
+        try {
+          const data = await response.json();
+          if (data && (data.error || data.errors)) {
+            msg = data.error || (Array.isArray(data.errors) ? data.errors.join(", ") : `${data.errors}`);
+          }
+        } catch {}
+        Alert.alert(msg);
+        setOldPassword('');
+        setNewPassword('');
+        setConfirmNewPassword('');
+        return;
+      }
       const data = await response.json();
       Alert.alert(data.message);
       setOldPassword('');
@@ -111,6 +135,9 @@ const PatientSettings = () => {
     } catch (error) {
       console.error('Error changing password:', error);
       Alert.alert('Error changing password');
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmNewPassword('');
     }
   };
 
@@ -254,7 +281,6 @@ const styles = StyleSheet.create({
   gradient: {
     flex: 1,
     alignItems: 'center',
-    height: '100%',
     width: '100%',
   },
   title: {

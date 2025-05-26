@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
@@ -21,43 +21,60 @@ const AssortedSubcategories = () => {
   const navigation = useNavigation();
   const [subcategories, setSubcategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
+  const [error, setError] = useState('');
   const route = useRoute();
   const { categoryName, categoryId } = route.params;
-  const scrollViewRef = useRef(null); 
-  const {width, _ } = Dimensions.get("window") 
-  const { getJSON } = useFetchWithAuth();
+  const scrollViewRef = useRef(null);
+  const { width } = Dimensions.get("window");
+  const { fetchWithAuth } = useFetchWithAuth();
 
   useFocusEffect(
     useCallback(() => {
-      console.log(categoryId)
+      if (__DEV__) console.log(categoryId);
       fetchSubcategories();
     }, [categoryId])
   );
 
   const fetchSubcategories = async () => {
+    setLoading(true);
+    setError('');
     try {
-      const data = await getJSON(`/users/${categoryId}/subcategories/`);
-      setSubcategories(data.subcategories.map(item => ({
-        subcategoryId: item.id,
-        name: item.subcategory,
-      })));
+      const res = await fetchWithAuth(`/users/${categoryId}/subcategories/`);
+      if (res.status === 204) {
+        setSubcategories([]);
+      } else if (!res.ok) {
+        let errMsg = 'Unknown error';
+        try {
+          const data = await res.json();
+          errMsg = data?.error || data?.message || JSON.stringify(data) || 'Unknown error';
+        } catch(e) {}
+        if (__DEV__) console.error('Fetch error:', errMsg);
+        setError(errMsg);
+      } else {
+        const data = await res.json();
+        setSubcategories(
+          (data.subcategories || []).map(item => ({
+            subcategoryId: item.id,
+            name: item.subcategory,
+          }))
+        );
+      }
     } catch (error) {
-      console.error('Fetch error:', error);
-      setError(error);
+      if (__DEV__) console.error('Fetch error:', error);
+      setError(error.message || 'Unknown error');
     } finally {
       setLoading(false);
-      console.log(subcategories);
+      if (__DEV__) console.log(subcategories);
     }
   };
 
   const handleSubcategoryPress = (subcategoryId, subcategory) => {
-    setLoading(true)
-    navigation.navigate('AssortedModules', { categoryId, subcategoryId, subcategory }); 
+    // Don't bother setting loading since navigation will unmount
+    navigation.navigate('AssortedModules', { categoryId, subcategoryId, subcategory });
   };
 
   const handleReturn = () => {
-    setLoading(true)
+    // Don't bother setting loading since navigation will unmount
     navigation.navigate('AssortedCategories');
   };
 
@@ -85,21 +102,20 @@ const AssortedSubcategories = () => {
         <Text style={[styles.header]}>{categoryName}</Text>
 
         {error ? (
-          <Text style={styles.errorMessage}>Error fetching data</Text>
+          <Text style={styles.errorMessage}>Error fetching data: {error}</Text>
         ) : (
           <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} ref={scrollViewRef}>
             {subcategories.length > 0 ? (
               subcategories.map((subcategory) => (
                 <SubCategory
-                  key={subcategory.subcategoryId} // Fix: Use the correct key
-                  text={subcategory.name} // Fix: Use the correct subcategory name
+                  key={subcategory.subcategoryId}
+                  text={subcategory.name}
                   handlePress={() => handleSubcategoryPress(subcategory.subcategoryId, subcategory.name)}
                 />
               ))
             ) : (
               <Text style={styles.errorMessage}>No subcategories available</Text>
-            )} 
-
+            )}
           </ScrollView>
         )}
       </LinearGradient>
@@ -118,10 +134,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center', 
     width: '90%',
-  },
-  minilogo: {
-    width: 60,
-    height: 60,
   },
   minilogo: {
     width: 60,

@@ -7,10 +7,9 @@ import PatientNavigation from './Navigation/PatientNavigation';
 import PasswordRecovery from './Pages/Login/PasswordRecovery';
 import { PatientProvider } from './Components/PatientContext';
 import { TokenProvider } from './Components/TokenContext';
+import { navigationRef } from './Navigation/NavRef';
 
 const Stack = createStackNavigator();
-
-export const navigationRef = React.createRef();
 
 const App = () => {
   return (

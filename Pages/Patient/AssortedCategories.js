@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation, useFocusEffect } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import Logo from '../../Images/Logo.png';
 import { useFetchWithAuth } from '../../Components/FetchWithAuth';
 
@@ -20,8 +20,8 @@ const AssortedCategories = () => {
   const { fetchWithAuth } = useFetchWithAuth();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const {width, _ } = Dimensions.get("window") 
+  const [error, setError] = useState(null);
+  const {width} = Dimensions.get("window") 
 
 useEffect(() => {
   fetchCategories();
@@ -29,6 +29,7 @@ useEffect(() => {
 
   const fetchCategories = async () => {
     setLoading(true);
+    setError(null);
     try {
       const response = await fetchWithAuth('/users/categories/', { method: 'GET' });
 
@@ -46,7 +47,7 @@ useEffect(() => {
       );
     } catch (error) {
       console.error('Fetch error:', error);
-      setError(error);
+      setError(error.message || 'Unknown error occurred');
     } finally {
       setLoading(false);
     }
@@ -80,7 +81,7 @@ useEffect(() => {
         {loading ? (
           <Text style={styles.errorMessage}>Loading...</Text>
         ) : error ? (
-          <Text style={styles.errorMessage}>Error fetching data </Text>
+          <Text style={styles.errorMessage}>Error fetching data: {error}</Text>
         ) : (
           <ScrollView contentContainerStyle={styles.scroll} >
             {categories.length > 0 ? (

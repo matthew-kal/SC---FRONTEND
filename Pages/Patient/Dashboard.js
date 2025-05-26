@@ -32,7 +32,7 @@ const Dashboard = ({ navigation }) => {
 
       setDashboardData(generalVideos || []);
       setTaskModuleData(tasks || []);
-      setQuote(quote.quote);
+      setQuote(quote?.quote);
       setWeeklyData([
         { x: 'M', y: weekData.mon || 0 },
         { x: 'T', y: weekData.tues || 0 },
@@ -49,31 +49,29 @@ const Dashboard = ({ navigation }) => {
       setError(error.message);
     } finally {
       setLoading(false);
+      setGraphKey(k => k + 1);
     }
   };
 
-  useFocusEffect(
-    useCallback(() => {
-      const today = new Date().getDate();
-      const shouldRefresh = refresh || date !== today;
-  
-      if (shouldRefresh) {
-        console.log("🔄 Fetching new dashboard data...");
-        fetchDashboardData();
-  
-        if (refresh) setRefresh(false);
-        if (date !== today) setDate(today);
-      }
-  
-      setGraphKey(prevKey => prevKey + 1);
-    }, [refresh])
-  );
 
-  const handleNavigate = (videoUrl, videoTitle, videoId, videoDescription, isCompleted) => {
+useFocusEffect(
+  useCallback(() => {
+    const today = new Date().getDate();
+    const needRefresh = refresh || date !== today;
+    if (needRefresh) {
+       fetchDashboardData();
+       if (refresh) setRefresh(false);
+       if (date !== today) setDate(today);
+     }
+
+  }, [refresh, date])   
+);
+
+  const handleNavigate = (videoUrl, videoTitle, videoId, videoDescription, isCompleted, mediaType) => {
     setIsNavigating(true);
     console.log(isCompleted)
     setTimeout(() => {
-      navigation.navigate('DashPlayer', { videoUrl, videoTitle, videoId, videoDescription, isCompleted });
+      navigation.navigate('DashPlayer', { videoUrl, videoTitle, videoId, videoDescription, isCompleted, mediaType });
       setIsNavigating(false);
     }, 500);
   };
@@ -102,6 +100,7 @@ const Dashboard = ({ navigation }) => {
   if (loading || isNavigating) {
     return (
       <View style={styles.container}>
+        
         <LinearGradient
           colors={['#AA336A', '#FFFFFF']}
           style={styles.gradient}
@@ -139,8 +138,7 @@ const Dashboard = ({ navigation }) => {
                     <TouchableOpacity
                       key={task.id}
                       onPress={async () => {
-                        if(task.isCompleted === false) {
-                        task.isCompleted = true
+                        if(!task.isCompleted) {
                         await handleTask(task.id); 
                         }
                       }}
@@ -162,7 +160,7 @@ const Dashboard = ({ navigation }) => {
                 {dashboardData.length > 0 &&
                   dashboardData.map((item) => (
                     <TouchableOpacity
-                      onPress={() => handleNavigate(item.url, item.title, item.id, item.description, item.isCompleted)}
+                      onPress={() => handleNavigate(item.url, item.title, item.id, item.description, item.isCompleted, item.media_type)}
                       key={item.id}
                       style={[styles.inner, item.isCompleted ? styles.innerSuccess : styles.innerError]}
                     >
@@ -192,7 +190,7 @@ const Dashboard = ({ navigation }) => {
                 <Text style={[styles.title, {marginTop: 60}]}>Today's Quote</Text>
                 <View style={[styles.quote, { width: width >= 450 ? '60%' : '90%' }]}>
                   <Text style={styles.quoteText}>
-                    {quote}
+                    {quote || 'Recovery is not a race. You don’t have to feel guilty if it takes longer than you thought it would.'}
                   </Text>
                 </View>
 

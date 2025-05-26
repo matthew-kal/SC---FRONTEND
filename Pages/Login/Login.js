@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useEffect, useContext } from 'react';
-import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Dimensions, SafeAreaView } from 'react-native';
+import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Dimensions, SafeAreaView, KeyboardAvoidingView } from 'react-native';
 // import Orientation from 'react-native-orientation-locker';  // Developer Mode
 import { LinearGradient } from 'expo-linear-gradient';
 import CustomInput from '../../Components/CustomInput';
@@ -22,14 +22,14 @@ const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, pa
   const handleLoginPress = () => {
   if (username && password) {
     setLoginDisabled(true);
-    onSubmit();  // call the parent handler
+    onSubmit();  
     setTimeout(() => setLoginDisabled(false), 4000);
   } else {
     onSubmit();  
   }
 };
   return (
-    <View style={styles.buttonContainer}>
+    <KeyboardAvoidingView style={styles.buttonContainer}>
       <CustomInput
         containerStyle={styles.inputContainer}
         placeholder={userPlaceholder}
@@ -69,7 +69,7 @@ const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, pa
           </TouchableOpacity>
         )}
       </View>
-    </View>
+    </KeyboardAvoidingView>
   );
 };
 
@@ -108,10 +108,10 @@ const Login = () => {
   const checkPatientLoginStatus = async () => {
   
     const refreshToken = await getSecureItem('refreshPatient');
-  
-    if (refreshToken) {
-      await refreshPatientAccessToken(refreshToken);
-    } 
+
+    if (!refreshToken) return;
+    await refreshPatientAccessToken(refreshToken);
+
   }; 
   
   const refreshPatientAccessToken = async (refreshToken) => {
@@ -216,8 +216,6 @@ useFocusEffect(
 
         console.log("🚀 `registerForPushNotificationsAsync` executed successfully!");
         setRefresh(true)
-        console.log(getSecureItem('accessPatient'));
-        console.log(getSecureItem('refreshPatient'));
         navigation.navigate('PatientNavigation', { screen: 'PatientDashboard' });
       } else {
         console.log("❌ Login failed. Response:", await response.text());

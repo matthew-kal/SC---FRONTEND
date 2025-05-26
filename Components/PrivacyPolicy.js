@@ -154,7 +154,7 @@ const PrivacyPolicy = () => {
               {/* 13. Contact Us */}
               <Text style={styles.modalPolicyHeader}>13. Contact Us</Text>
               <Text style={styles.modalPolicyText}>
-                SurgiCalm Dev Team{'\n'}privacy@surgicalm.com
+                SurgiCalm Dev Team{'\n'}admin@surgicalm.com
               </Text>
             </ScrollView>
 

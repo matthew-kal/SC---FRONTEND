@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
@@ -21,11 +21,11 @@ const AssortedModules = () => {
   const navigation = useNavigation();
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState("");
   const route = useRoute();
   const { categoryId, subcategoryId, subcategory } = route.params;
-  const {width, _ } = Dimensions.get("window") 
-  const { getJSON } = useFetchWithAuth();
+  const {width} = Dimensions.get("window") 
+  const { fetchWithAuth } = useFetchWithAuth();
 
   useFocusEffect(
     useCallback(() => {
@@ -33,30 +33,34 @@ const AssortedModules = () => {
     }, [categoryId, subcategoryId])
   );
 
-  const fetchModules = async () => {
-    try {
-      const data = await getJSON(`/users/${categoryId}/${subcategoryId}/modules-list/`);
-      console.log(data);
-
-      // Mapping video titles and URLs
-      const videoData = data.videos ? data.videos.map(video => ({
-        title: video.title,
-        url: video.url,
-        description: video.description,
-      })) : [];
-      setVideos(videoData);
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setError(error);
-    } finally {
-      setLoading(false);
-      console.log(videos);
+const fetchModules = async () => {
+  setError('');
+  try {
+    const res = await fetchWithAuth(`/users/${categoryId}/${subcategoryId}/modules-list/`);
+    if (!res.ok) {
+      const data = await res.json();
+      throw new Error(data?.error || data?.message || 'Failed to fetch modules');
     }
-  };
+    const data = await res.json();
+    const videoData = (data.videos || []).map(video => ({
+      id: video.id ?? video.url,
+      title: video.title,
+      url: video.url,
+      description: video.description,
+      media_type: video.media_type
+    }));
+    setVideos(videoData);
+    if (__DEV__) console.log('[Modules] parsed:', videoData);
+  } catch (error) {
+    console.error('Fetch error:', error);
+    setError(error.message || 'Unknown error');
+  } finally {
+    setLoading(false);
+  }
+};
 
-  const handleNavigate = (videoUrl, videoTitle, videoDescription) => {
-    setLoading(true);
-    navigation.navigate('AssortedPlayer', { videoUrl, videoTitle, videoDescription });
+  const handleNavigate = (videoUrl, videoTitle, videoDescription, mediaType) => {
+    navigation.navigate('AssortedPlayer', { videoUrl, videoTitle, videoDescription, mediaType });
   };
 
   const handleReturn = () => {
@@ -99,16 +103,16 @@ const AssortedModules = () => {
         <Text style={styles.header}>{subcategory}</Text>
 
         {error ? (
-          <Text style={styles.errorMessage}>No videos found.</Text>
+          <Text style={styles.errorMessage}>Error fetching videos: {error}</Text>
         ) : 
         
         videos.length > 0 ? (
           <ScrollView contentContainerStyle={styles.scroll}>
             {videos.map((video, index) => (
               <Module
-                key={index}
+                key={video.id || video.url}
                 title={video.title}
-                handlePress={() => handleNavigate(video.url, video.title, video.description)}
+                handlePress={() => handleNavigate(video.url, video.title, video.description, video.media_type)}
               />
             ))}
           </ScrollView>
