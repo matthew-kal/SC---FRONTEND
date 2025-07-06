@@ -71,6 +71,7 @@ useFocusEffect(
     setIsNavigating(true);
     console.log(isCompleted)
     setTimeout(() => {
+      console.log(videoUrl + videoTitle + videoId + videoDescription+ isCompleted + mediaType)
       navigation.navigate('DashPlayer', { videoUrl, videoTitle, videoId, videoDescription, isCompleted, mediaType });
       setIsNavigating(false);
     }, 500);

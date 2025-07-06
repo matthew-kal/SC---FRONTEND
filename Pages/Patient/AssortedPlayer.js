@@ -1,13 +1,84 @@
-import React, { useRef } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert, SafeAreaView } from 'react-native';
+import React, { useRef, useState, useEffect, useCallback } from 'react'; // Added useState, useEffect, useCallback
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert, SafeAreaView, ActivityIndicator } from 'react-native'; // Added ActivityIndicator
 import { Video } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import AudioPlayer from '../../Components/AudioPlayer';          // ← NEW
+import AudioPlayer from '../../Components/AudioPlayer';
 
 const AssortedPlayer = ({ route, navigation }) => {
   const { videoUrl, videoTitle, videoDescription, mediaType } = route.params;
   const videoRef = useRef(null);
+
+  // --- NEW: State for media loading and errors within AssortedPlayer ---
+  const [mediaLoading, setMediaLoading] = useState(true);
+  const [mediaError, setMediaError] = useState(null); // Stores a user-friendly error message
+
+  // --- NEW: Validate and prepare media URL on mount ---
+  useEffect(() => {
+    console.log("[AssortedPlayer] Effect running: Initial media URL check.");
+    if (!videoUrl) {
+      console.error("[AssortedPlayer] Error: videoUrl is missing from route params.");
+      setMediaError('Media content URL is missing. Please contact support.');
+      setMediaLoading(false);
+      return;
+    }
+    // Check for "fake" URLs or invalid protocols upfront
+    if (videoUrl.includes('fakeurl.com') || !videoUrl.startsWith('http')) {
+      console.warn(`[AssortedPlayer] Warning: Invalid or mock URL detected: ${videoUrl}`);
+      setMediaError('Invalid media URL detected. Content may not load. Please use a valid, accessible URL (e.g., HTTPS).');
+      setMediaLoading(false);
+      return;
+    }
+    console.log(`[AssortedPlayer] Valid URL format detected: ${videoUrl}`);
+    // If URL seems valid, the specific player component (Video/AudioPlayer) will handle loading.
+    // Set loading to false here, so the player components' own loading indicators take over.
+    setMediaLoading(false);
+    setMediaError(null); // Clear any previous error
+  }, [videoUrl]);
+
+  /* NEW: Video status update handler for loading/error reporting */
+  const handleVideoPlaybackStatusUpdate = useCallback((status) => {
+    // Only set loading to false once the video is actually loaded
+    if (status.isLoaded && mediaLoading) {
+      setMediaLoading(false);
+      console.log("[AssortedPlayer] Video loaded successfully.");
+    }
+    // Check for errors during playback
+    if (status.error && !mediaError) { // Prevent setting same error multiple times
+      const errorMessage = `Video playback error: ${status.error}. Please check your internet connection.`;
+      console.error(`[AssortedPlayer] Video playback error detected: ${status.error}`);
+      setMediaError(errorMessage);
+      setMediaLoading(false); // Stop loading if an error occurs
+      Alert.alert('Video Playback Error', errorMessage);
+    }
+  }, [mediaLoading, mediaError]); // Added mediaLoading, mediaError to dependencies
+
+  /* NEW: Video error handler (for initial load errors from Video component) */
+  const handleVideoError = useCallback((error) => {
+    console.error('[AssortedPlayer] Expo Video onError (initial load):', error);
+    setMediaError('Failed to load video: Check URL, network, or content. Contact support if issue persists.');
+    setMediaLoading(false);
+    Alert.alert('Video Load Error', 'Unable to load video. Please verify the URL or your network connection.');
+  }, []);
+
+  /* NEW: Audio error handler (passed to AudioPlayer component) */
+  const handleAudioError = useCallback((error) => {
+    console.error('[AssortedPlayer] AudioPlayer reported error:', error);
+    setMediaError('Failed to load audio: Check URL, network, or content. Contact support if issue persists.');
+    setMediaLoading(false);
+    Alert.alert('Audio Load Error', 'Unable to load audio. Please verify the URL or your network connection.');
+  }, []);
+
+  /* ------------------- NAVIGATION ------------------- */
+  const returnHome = useCallback(async () => {
+    if (videoRef.current) {
+      console.log("[AssortedPlayer] Pausing and unloading video before navigating home.");
+      await videoRef.current.pauseAsync();
+      await videoRef.current.unloadAsync();
+    }
+    console.log("[AssortedPlayer] Navigating to Dashboard.");
+    navigation.goBack(); // AssortedPlayer uses goBack, not navigate('Dashboard')
+  }, [navigation]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -20,7 +91,18 @@ const AssortedPlayer = ({ route, navigation }) => {
         >
           <Text style={styles.title}>{videoTitle}</Text>
 
-          {mediaType === 'video' ? (
+          {/* --- NEW: Conditional Rendering of Media Player / Loading / Error State --- */}
+          {mediaError ? (
+            <View style={styles.mediaErrorContainer}>
+              <Icon name="alert-circle-outline" size={60} color="red" />
+              <Text style={styles.mediaErrorText}>{mediaError}</Text>
+            </View>
+          ) : mediaLoading ? (
+            <View style={styles.mediaLoadingContainer}>
+              <ActivityIndicator size="large" color="white" />
+              <Text style={styles.mediaLoadingText}>Loading Media...</Text>
+            </View>
+          ) : mediaType === 'video' ? (
             <Video
               ref={videoRef}
               source={{ uri: videoUrl }}
@@ -28,15 +110,15 @@ const AssortedPlayer = ({ route, navigation }) => {
               useNativeControls
               resizeMode="contain"
               shouldPlay
-              onError={() =>
-                Alert.alert('Video Error', 'Unable to load this video. Please try again later.')
-              }
+              onPlaybackStatusUpdate={handleVideoPlaybackStatusUpdate} // NEW: Use detailed handler
+              onError={handleVideoError} // NEW: Use detailed handler for load errors
             />
           ) : (
             <AudioPlayer
               sourceUrl={videoUrl}
               iconColor="white"
               iconSize={60}
+              onPlaybackError={handleAudioError} // NEW: Pass error handler to AudioPlayer
             />
           )}
 
@@ -47,7 +129,7 @@ const AssortedPlayer = ({ route, navigation }) => {
           </View>
 
           <TouchableOpacity
-            onPress={() => navigation.goBack()}
+            onPress={returnHome} 
             style={styles.button}
             accessibilityLabel="Return to categories"
           >
@@ -68,6 +150,43 @@ const styles = StyleSheet.create({
   textContainer: { width: '90%', height: 230, marginTop: 10 },
   vidText: { fontFamily: 'Cairo', textAlign: 'center', color: 'white', fontSize: 19, fontWeight: 'bold' },
   button: { marginTop: 30, padding: 10, backgroundColor: 'white', borderColor: '#AA336A', borderRadius: 100, borderWidth: 2 },
+  // New styles for media loading/error containers (shared with DashPlayer if possible, but defined here for completeness)
+  mediaLoadingContainer: {
+    width: '80%', // Adjusted width for AssortedPlayer's video style
+    height: '30%', // Adjusted height for AssortedPlayer's video style
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderColor: 'white',
+    borderWidth: 3,
+    borderRadius: 10,
+    marginBottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+  },
+  mediaLoadingText: {
+    marginTop: 10,
+    color: 'white',
+    fontSize: 18,
+    fontFamily: 'Cairo',
+  },
+  mediaErrorContainer: {
+    width: '80%', // Adjusted width for AssortedPlayer's video style
+    height: '30%', // Adjusted height for AssortedPlayer's video style
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderColor: 'red',
+    borderWidth: 3,
+    borderRadius: 10,
+    marginBottom: 10,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+  },
+  mediaErrorText: {
+    marginTop: 10,
+    color: 'red',
+    fontSize: 18,
+    textAlign: 'center',
+    paddingHorizontal: 10,
+    fontFamily: 'Cairo',
+  },
 });
 
 export default AssortedPlayer;

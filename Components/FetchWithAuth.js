@@ -1,19 +1,36 @@
+// FetchWithAuth.js
 import React, { useContext } from 'react';
 import { getSecureItem, clearTokens, saveSecureItem } from './Memory';
 import { TokenContext } from './TokenContext';
-import { BASE_URL } from '@env';
+// import { BASE_URL } from '@env';
 import { CommonActions } from '@react-navigation/native';
 import { navigationRef } from '../Navigation/NavRef';
 
+const BASE_URL = 'https://api.surgicalm.com'
+
 const refreshAccessToken = async (refreshToken) => {
+  console.log('[refreshAccessToken] Function called.');
+  console.log(`[refreshAccessToken] Received refreshToken: ${refreshToken ? 'YES' : 'NO (null/undefined)'}`);
+  
   try {
-    const response = await fetch(`${BASE_URL}/api/token/refresh/`, {
+    const refreshUrl = `${BASE_URL}/api/token/refresh/`;
+    console.log(`[refreshAccessToken] Refresh URL formed: ${refreshUrl}`);
+
+    const response = await fetch(refreshUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refresh: refreshToken }),
     });
-    if (!response.ok) return null;
+
+    console.log(`[refreshAccessToken] Refresh token response status: ${response.status}`);
+    if (!response.ok) {
+      console.error(`[refreshAccessToken] Refresh token request failed with status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`[refreshAccessToken] Refresh token error response body: ${errorText}`);
+      return null;
+    }
     const data = await response.json();
+    console.log('[refreshAccessToken] Refresh token response data received.');
     return data.access;
   } catch (err) {
     console.error('[FetchWithAuth] Refresh token request failed:', err);
@@ -21,8 +38,15 @@ const refreshAccessToken = async (refreshToken) => {
   }
 };
 
-const rawFetch = (endpoint, token, options = {}) =>
-  fetch(`${BASE_URL}${endpoint}`, {
+const rawFetch = (endpoint, token, options = {}) => {
+  console.log('[rawFetch] Function called.');
+  console.log(`[rawFetch] Received endpoint: ${endpoint}`);
+  console.log(`[rawFetch] Token provided: ${token ? 'YES' : 'NO (null/undefined)'}`);
+
+  const fullUrl = `${BASE_URL}${endpoint}`;
+  console.log(`[rawFetch] Full URL formed: ${fullUrl}`);
+
+  return fetch(fullUrl, {
     ...options,
     headers: {
       'Content-Type': 'application/json',
@@ -30,21 +54,30 @@ const rawFetch = (endpoint, token, options = {}) =>
       Authorization: `Bearer ${token}`,
     },
   });
+};
 
 
 export const useFetchWithAuth = () => {
   const { userType, setUserType } = useContext(TokenContext);
+  console.log(`[useFetchWithAuth] Hook initialized. Current userType: ${userType}`);
 
   const fetchWithAuth = async (endpoint, options = {}) => {
+    console.log(`[fetchWithAuth] API call initiated for endpoint: ${endpoint}`);
+    console.log(`[fetchWithAuth] Options provided: ${JSON.stringify(options)}`);
+    
     // Determine token storage keys based on userType
     const accessKey = userType === 'nurse' ? 'accessNurse' : 'accessPatient';
     const refreshKey = userType === 'nurse' ? 'refreshNurse' : 'refreshPatient';
+    console.log(`[fetchWithAuth] Using accessKey: ${accessKey}, refreshKey: ${refreshKey}`);
 
     let accessToken = await getSecureItem(accessKey);
     const refreshToken = await getSecureItem(refreshKey);
+    console.log(`[fetchWithAuth] Retrieved accessToken: ${accessToken ? 'YES' : 'NO (null/undefined)'}`);
+    console.log(`[fetchWithAuth] Retrieved refreshToken: ${refreshToken ? 'YES' : 'NO (null/undefined)'}`);
 
     // No tokens → force logout
     if (!accessToken || !refreshToken) {
+      console.warn('[fetchWithAuth] No authentication tokens found. Forcing logout.');
       await clearTokens();
       setUserType('');
       navigationRef.current?.dispatch(
@@ -57,11 +90,13 @@ export const useFetchWithAuth = () => {
     }
 
     let response = await rawFetch(endpoint, accessToken, options);
+    console.log(`[fetchWithAuth] Initial rawFetch response status: ${response.status}`);
 
     if (response.status === 401) {
-      console.log('[FetchWithAuth] Access token expired. Attempting refresh…');
+      console.log('[fetchWithAuth] Access token expired (401). Attempting refresh…');
       const newAccess = await refreshAccessToken(refreshToken);
       if (!newAccess) {
+        console.error('[fetchWithAuth] Failed to refresh access token. Forcing logout.');
         await clearTokens();
         setUserType('');
         if (navigationRef.current) {
@@ -71,9 +106,11 @@ export const useFetchWithAuth = () => {
           }
         throw new Error('Session expired.');
       }
+      console.log('[fetchWithAuth] Access token refreshed successfully. Retrying original request.');
       // Persist refreshed access token under correct key
       await saveSecureItem(accessKey, newAccess);
       response = await rawFetch(endpoint, newAccess, options);
+      console.log(`[fetchWithAuth] Retried rawFetch response status: ${response.status}`);
     }
 
     return response;
@@ -81,14 +118,21 @@ export const useFetchWithAuth = () => {
 
 
   const getJSON = async (endpoint, options = {}) => {
+    console.log(`[getJSON] Fetching JSON for endpoint: ${endpoint}`);
     const res = await fetchWithAuth(endpoint, options);
+    console.log(`[getJSON] fetchWithAuth returned. Response status: ${res.status}, ok: ${res.ok}`);
+
     const data = await res.json();
+    console.log(`[getJSON] Parsed JSON data (first 200 chars): ${JSON.stringify(data).substring(0,200)}...`);
+
     if (!res.ok) {
+      console.error(`[getJSON] Request failed. Status: ${res.status}. Details:`, data);
       const err = new Error(data?.detail || 'Request failed');
       err.status = res.status;
       err.body = data;
       throw err;
     }
+    console.log(`[getJSON] Request successful for endpoint: ${endpoint}`);
     return data;
   };
 

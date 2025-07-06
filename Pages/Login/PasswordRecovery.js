@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CustomInput from '../../Components/CustomInput';
 import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/cairo';
-import { BASE_URL } from '@env';
+// import { BASE_URL } from '@env';
+
+const BASE_URL = 'https://api.surgicalm.com'
 
 const PasswordRecovery = ({ navigation }) => {
     const [email, setEmail] = useState('');

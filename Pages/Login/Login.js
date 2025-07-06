@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Dimensions, SafeAreaView, KeyboardAvoidingView } from 'react-native';
-// import Orientation from 'react-native-orientation-locker';  // Developer Mode
+import Orientation from 'react-native-orientation-locker';  
 import { LinearGradient } from 'expo-linear-gradient';
 import CustomInput from '../../Components/CustomInput';
 import { getSecureItem, saveSecureItem, deleteSecureItem } from '../../Components/Memory';
@@ -10,7 +10,9 @@ import Logo from '../../Images/Logo.png';
 import { PatientContext } from '../../Components/PatientContext';
 import { TokenContext } from '../../Components/TokenContext';
 import { registerForPushNotificationsAsync } from '../../Services/notifications';
-import { BASE_URL } from '@env';
+// import { BASE_URL } from '@env';
+
+const BASE_URL = 'https://api.surgicalm.com'
 
 
 const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, password, setPassword, onSubmit, isPatient }) => {
@@ -139,15 +141,14 @@ const Login = () => {
     }
   };
   
-  /* Developer Mode
+
   useEffect(() => {
-    Orientation.lockToPortrait(); // Locks the orientation to portrait
+    Orientation.lockToPortrait(); 
 
     return () => {
-      Orientation.unlockAllOrientations(); // Unlocks orientation when component unmounts
+      Orientation.unlockAllOrientations(); 
     };
   }, []);
-  */  
 
 useFocusEffect(
   useCallback(() => {
@@ -167,6 +168,7 @@ useFocusEffect(
       return;
     }
     try {
+      console.log(`${BASE_URL}/users/nurse/login/`)
       const response = await fetch(`${BASE_URL}/users/nurse/login/`, {
         method: 'POST',
         headers: {
@@ -212,7 +214,7 @@ useFocusEffect(
         await saveSecureItem('refreshPatient', data.refresh);
         setUserType('patient');
         // ✅ Register push token
-        // await registerForPushNotificationsAsync();
+       await registerForPushNotificationsAsync();
 
         console.log("🚀 `registerForPushNotificationsAsync` executed successfully!");
         setRefresh(true)

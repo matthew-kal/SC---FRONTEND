@@ -1,13 +1,12 @@
 {
   "expo": {
     "name": "frontend",
-    "slug": "frontend",
-    "projectId": "frontend-surgicalm",
+    "slug": "SC---Frontend",
+    "owner": "matthewkal",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
     "splash": {
       "image": "./assets/splash.png",
       "resizeMode": "contain",
@@ -15,16 +14,32 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.SurgiCalm.Englewood",
+      "usesApplePushNotifications": true,
+      "bundleIdentifier": "com.surgicalm.platform",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSAppTransportSecurity": {
+          "NSExceptionDomains": {
+            "localhost": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            },
+            "192.168.1.72": {
+              "NSExceptionAllowsInsecureHTTPLoads": true
+            }
+          }
+        }
       }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS"
+      ],
+      "package": "com.surgicalm.app"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -32,11 +47,15 @@
     "plugins": [
       "expo-secure-store",
       "expo-audio",
-      "expo-video"
+      "expo-video", 
+      "expo-notifications"
     ],
+    "eas": {
+      "projectId": "eb94781a-5040-4c76-8e2b-40ba048cbbdf"
+    },
     "extra": {
       "eas": {
-        "projectId": "eb94781a-5040-4c76-8e2b-40ba048cbbdf"
+        "projectId": "7ceee751-70a4-4c90-a14e-d3980d118576"
       }
     }
   }

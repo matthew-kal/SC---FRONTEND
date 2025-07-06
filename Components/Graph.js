@@ -4,7 +4,7 @@ import { VictoryBar, VictoryChart, VictoryAxis, VictoryLabel } from 'victory-nat
 
 const Graph = ({ weeklyData, dailyData }) => {
   return (
-    <View style={styles.container}>
+    <View style={styles.container}> 
       <View style={styles.sup}>
         <View style={styles.supInner}>
           <Text style={styles.supText}> 
