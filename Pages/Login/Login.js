@@ -1,8 +1,8 @@
 import React, { useState, useCallback, useEffect, useContext } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Dimensions, SafeAreaView, KeyboardAvoidingView } from 'react-native';
-import Orientation from 'react-native-orientation-locker';  
 import { LinearGradient } from 'expo-linear-gradient';
 import CustomInput from '../../Components/CustomInput';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { getSecureItem, saveSecureItem, deleteSecureItem } from '../../Components/Memory';
 import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/cairo';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -101,6 +101,19 @@ const Login = () => {
   const logoWidth = width < 400 ? w * 0.8 : width < 450 ? w * 0.9 : w;
   const logoHeight = width < 400 ? h * 0.8 : width < 450 ? h * 0.9 : h;
 
+  useEffect(() => {
+    async function lockOrientation() {
+      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }
+
+    lockOrientation();
+
+    return () => {
+      ScreenOrientation.unlockAsync();
+    };
+  }, []);
+
+
  
     useEffect(() => {
     checkPatientLoginStatus(); 
@@ -141,14 +154,6 @@ const Login = () => {
     }
   };
   
-
-  useEffect(() => {
-    Orientation.lockToPortrait(); 
-
-    return () => {
-      Orientation.unlockAllOrientations(); 
-    };
-  }, []);
 
 useFocusEffect(
   useCallback(() => {
