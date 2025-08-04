@@ -47,6 +47,7 @@ const Dashboard = ({ navigation }) => {
     } catch (error) {
       console.error('Fetch error:', error.message);
       setError(error.message);
+      throw error; // Re-throw for the calling function to handle
     } finally {
       setLoading(false);
       setGraphKey(k => k + 1);
@@ -58,12 +59,18 @@ useFocusEffect(
   useCallback(() => {
     const today = new Date().getDate();
     const needRefresh = refresh || date !== today;
+    
     if (needRefresh) {
-       fetchDashboardData();
-       if (refresh) setRefresh(false);
-       if (date !== today) setDate(today);
-     }
-
+      setLoading(true);
+      setError(null);
+      
+      fetchDashboardData().then(() => {
+        if (refresh) setRefresh(false);
+        if (date !== today) setDate(today);
+      }).catch((error) => {
+        console.error('Dashboard refresh failed:', error);
+      });
+    }
   }, [refresh, date])   
 );
 

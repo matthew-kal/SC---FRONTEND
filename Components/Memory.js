@@ -12,7 +12,8 @@ export const getSecureItem = async (key) => {
 export const saveSecureItem = async (key, value) => {
   try {
     await SecureStore.setItemAsync(key, value, {
-      keychainAccessible: SecureStore.WHEN_UNLOCKED_THIS_DEVICE_ONLY, 
+      // Use the current recommended option for maximum accessibility
+      keychainAccessible: SecureStore.WHEN_UNLOCKED, 
     });
   } catch (error) {
     console.error(`Error saving ${key} to SecureStore:`, error);
@@ -29,15 +30,38 @@ export const deleteSecureItem = async (key) => {
 
 export const clearTokens = async () => {
   try {
-    const access = await SecureStore.getItemAsync('accessPatient');
-    const refresh = await SecureStore.getItemAsync('refreshPatient');
-    if (access !== null) {
-      await SecureStore.deleteItemAsync('accessPatient');
+    // Clear all possible token combinations
+    const tokensToClear = [
+      'accessPatient', 'refreshPatient',
+      'accessNurse', 'refreshNurse'
+    ];
+    
+    for (const tokenKey of tokensToClear) {
+      const token = await SecureStore.getItemAsync(tokenKey);
+      if (token !== null) {
+        await SecureStore.deleteItemAsync(tokenKey);
+        console.log(`[clearTokens] Cleared ${tokenKey}`);
+      }
     }
-    if (refresh !== null) {
-      await SecureStore.deleteItemAsync('refreshPatient');
+    
+    // Also clear patient biometric-related data for security
+    // Note: Biometric auth is only available for patients, but we clear this data
+    // whenever any tokens are cleared for comprehensive security cleanup
+    const biometricKeys = [
+      'biometricPreferences',
+      'biometricFailedAttempts', 
+      'biometricLockoutTimestamp'
+    ];
+    
+    for (const biometricKey of biometricKeys) {
+      try {
+        await SecureStore.deleteItemAsync(biometricKey);
+        console.log(`[clearTokens] Cleared ${biometricKey}`);
+      } catch (error) {
+        // Continue if key doesn't exist
+      }
     }
   } catch (error) {
-    console.error('Error clearing patient tokens:', error);
+    console.error('Error clearing tokens:', error);
   }
 };

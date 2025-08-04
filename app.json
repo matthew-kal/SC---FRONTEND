@@ -13,10 +13,12 @@
     },
     "ios": {
       "supportsTablet": true,
+      "requireFullScreen": true,
       "usesApplePushNotifications": true,
       "bundleIdentifier": "com.surgicalm.platform",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "SurgiCalm uses Face ID and Touch ID to provide secure and convenient access to your healthcare content. This ensures your medical information stays protected while allowing quick and safe login to your personalized care plan.",
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
             "localhost": {
@@ -47,7 +49,12 @@
       "expo-secure-store",
       "expo-audio",
       "expo-video", 
-      "expo-notifications"
+      "expo-notifications", 
+      ["expo-screen-orientation", 
+      {
+        "initialOrientation": "PORTRAIT"
+      }
+      ]
     ],
     "eas": {
       "projectId": "eb94781a-5040-4c76-8e2b-40ba048cbbdf"

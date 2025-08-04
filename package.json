@@ -23,6 +23,7 @@
     "expo-device": "~7.1.4",
     "expo-linear-gradient": "~14.1.5",
     "expo-notifications": "~0.31.3",
+    "expo-local-authentication": "~16.0.5",
     "expo-secure-store": "~14.2.3",
     "expo-status-bar": "~2.2.3",
     "expo-video": "~2.2.2",

@@ -31,7 +31,7 @@ const refreshAccessToken = async (refreshToken) => {
     }
     const data = await response.json();
     console.log('[refreshAccessToken] Refresh token response data received.');
-    return data.access;
+    return data; // Return full response to access both access and refresh tokens
   } catch (err) {
     console.error('[FetchWithAuth] Refresh token request failed:', err);
     return null;
@@ -59,7 +59,7 @@ const rawFetch = (endpoint, token, options = {}) => {
 
 export const useFetchWithAuth = () => {
   const { userType, setUserType } = useContext(TokenContext);
-  console.log(`[useFetchWithAuth] Hook initialized. Current userType: ${userType}`);
+  // Removed noisy log - only log during actual API calls
 
   const fetchWithAuth = async (endpoint, options = {}) => {
     console.log(`[fetchWithAuth] API call initiated for endpoint: ${endpoint}`);
@@ -94,8 +94,8 @@ export const useFetchWithAuth = () => {
 
     if (response.status === 401) {
       console.log('[fetchWithAuth] Access token expired (401). Attempting refresh…');
-      const newAccess = await refreshAccessToken(refreshToken);
-      if (!newAccess) {
+      const tokenData = await refreshAccessToken(refreshToken);
+      if (!tokenData || !tokenData.access) {
         console.error('[fetchWithAuth] Failed to refresh access token. Forcing logout.');
         await clearTokens();
         setUserType('');
@@ -108,8 +108,13 @@ export const useFetchWithAuth = () => {
       }
       console.log('[fetchWithAuth] Access token refreshed successfully. Retrying original request.');
       // Persist refreshed access token under correct key
-      await saveSecureItem(accessKey, newAccess);
-      response = await rawFetch(endpoint, newAccess, options);
+      await saveSecureItem(accessKey, tokenData.access);
+      // Save new refresh token if provided (token rotation)
+      if (tokenData.refresh) {
+        await saveSecureItem(refreshKey, tokenData.refresh);
+        console.log('[fetchWithAuth] Updated refresh token due to rotation');
+      }
+      response = await rawFetch(endpoint, tokenData.access, options);
       console.log(`[fetchWithAuth] Retried rawFetch response status: ${response.status}`);
     }
 
