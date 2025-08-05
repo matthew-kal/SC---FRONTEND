@@ -96,7 +96,7 @@ const AssortedSubcategories = () => {
           <TouchableOpacity onPress={handleReturn} style={styles.backbutton}>
             <Icon name={"return-up-back-outline"} style={styles.icon} size={27} color="#AA336A" />
           </TouchableOpacity>
-          <Image source={miniLogo} style={styles.minilogo} />
+
         </View>
 
         <Text style={[styles.header]}>{categoryName}</Text>

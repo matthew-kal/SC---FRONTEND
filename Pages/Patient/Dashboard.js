@@ -32,7 +32,7 @@ const Dashboard = ({ navigation }) => {
 
       setDashboardData(generalVideos || []);
       setTaskModuleData(tasks || []);
-      setQuote(quote?.quote);
+      setQuote(quote?.quote_text);
       setWeeklyData([
         { x: 'M', y: weekData.mon || 0 },
         { x: 'T', y: weekData.tues || 0 },

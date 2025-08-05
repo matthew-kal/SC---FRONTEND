@@ -2,7 +2,6 @@ import React, { useState, useCallback, useEffect, useContext, useRef } from 'rea
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Dimensions, SafeAreaView, KeyboardAvoidingView, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import CustomInput from '../../Components/CustomInput';
-// import * as ScreenOrientation from 'expo-screen-orientation';
 import { getSecureItem, saveSecureItem, deleteSecureItem } from '../../Components/Memory';
 import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/cairo';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
@@ -11,9 +10,8 @@ import { PatientContext } from '../../Components/PatientContext';
 import { TokenContext } from '../../Components/TokenContext';
 import { registerForPushNotificationsAsync } from '../../Services/notifications';
 import BiometricAuth from '../../Components/BiometricAuth';
-// import { BASE_URL } from '@env';
 
-const BASE_URL = 'https://api.surgicalm.com'
+const BASE_URL = 'http://192.168.1.72:80' // 'https://api.surgicalm.com'
 
 
 const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, password, setPassword, onSubmit, isPatient }) => {
@@ -106,18 +104,6 @@ const Login = () => {
   const logoWidth = width < 400 ? w * 0.8 : width < 450 ? w * 0.9 : w;
   const logoHeight = width < 400 ? h * 0.8 : width < 450 ? h * 0.9 : h;
 
-  useEffect(() => {
-    async function lockOrientation() {
-      await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-    }
-
-    lockOrientation();
-
-    return () => {
-      ScreenOrientation.unlockAsync();
-    };
-  }, []);
-
   // Wait for TokenContext to initialize before checking SSO
   useEffect(() => {
     if (isInitialized) {
@@ -155,6 +141,7 @@ const Login = () => {
   
   const checkStoredLoginStatus = async () => {
     try {
+      console.log(BASE_URL)
       setIsCheckingSSO(true);
       
       // Only check for patient tokens - nurses always use manual login

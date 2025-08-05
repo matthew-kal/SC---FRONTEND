@@ -3,7 +3,7 @@ import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants'; 
 import { getSecureItem } from '../Components/Memory';
 
-const BASE_URL = 'https://api.surgicalm.com'; // Ensure this is correct for your backend API
+const BASE_URL = 'http://192.168.1.72:80' // 'https://api.surgicalm.com'
 
 export async function registerForPushNotificationsAsync() {
   console.log("🔥 [START] Entering `registerForPushNotificationsAsync` function...");
