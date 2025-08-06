@@ -1,15 +1,15 @@
 import React, { useState, useCallback, useEffect, useContext, useRef } from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Alert, Dimensions, SafeAreaView, KeyboardAvoidingView, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import CustomInput from '../../Components/CustomInput';
-import { getSecureItem, saveSecureItem, deleteSecureItem } from '../../Components/Memory';
+import CustomInput from '../../Components/Cards/CustomInput';
+import { getSecureItem, saveSecureItem, deleteSecureItem } from '../../Components/Services/Memory';
 import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/cairo';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import Logo from '../../Images/Logo.png'; 
-import { PatientContext } from '../../Components/PatientContext';
-import { TokenContext } from '../../Components/TokenContext';
-import { registerForPushNotificationsAsync } from '../../Services/notifications';
-import BiometricAuth from '../../Components/BiometricAuth';
+import { PatientContext } from '../../Components/Services/PatientContext';
+import { TokenContext } from '../../Components/Services/TokenContext';
+import { registerForPushNotificationsAsync } from '../../Components/Services/Notifications';
+import BiometricAuth from '../../Components/Services/BiometricAuth';
 
 const BASE_URL = 'http://192.168.1.72:80' // 'https://api.surgicalm.com'
 
@@ -298,6 +298,12 @@ useFocusEffect(
 
       if (response.status === 200) {
         const data = await response.json();
+        
+        // Clear any existing patient tokens to prevent auto-login after nurse logout
+        await deleteSecureItem('accessPatient');
+        await deleteSecureItem('refreshPatient');
+        console.log('[Login] Cleared patient tokens due to nurse login');
+        
         await saveSecureItem('accessNurse', data.access);
         await saveSecureItem('refreshNurse', data.refresh);
         setUserType('nurse');

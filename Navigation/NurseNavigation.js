@@ -4,7 +4,7 @@ import { StyleSheet, View } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import AccountCreation from '../Pages/Nurse/AccountCreation';
 import PatientLookup from '../Pages/Nurse/PatientLookup';
-import NurseNavbar from '../Components/NurseNavbar';
+import NurseNavbar from '../Components/NavBars/NurseNavbar';
 import PatientDetails from '../Pages/Nurse/PatientDetails';
 import NurseSettings from '../Pages/Nurse/NurseSettings.js'
 

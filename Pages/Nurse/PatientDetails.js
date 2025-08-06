@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import Graph from '../../Components/Graph';
+import Graph from '../../Components/Cards/Graph';
 
 const PatientDetails = ({ route }) => {
   const { email, username, id, weeklyData, dailyData } = route.params;

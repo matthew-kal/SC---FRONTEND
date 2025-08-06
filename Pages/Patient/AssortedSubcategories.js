@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Logo from '../../Images/Logo.png';
-import miniLogo from '../../Images/mini_logo.png';
-import { useFetchWithAuth } from '../../Components/FetchWithAuth';
+import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
+import AssortedSkeleton from '../../Components/Skeletons/AssortedSkeleton';
+import CacheManager from '../../Components/Services/CacheManager';
 
 const SubCategory = ({ text, handlePress }) => {
   return (
@@ -30,43 +30,40 @@ const AssortedSubcategories = () => {
 
   useFocusEffect(
     useCallback(() => {
-      if (__DEV__) console.log(categoryId);
       fetchSubcategories();
-    }, [categoryId])
+    }, [fetchSubcategories])
   );
 
-  const fetchSubcategories = async () => {
+  const fetchSubcategories = useCallback(async () => {
     setLoading(true);
     setError('');
+    const cacheKey = `assorted_subcategories_${categoryId}`;
+
     try {
-      const res = await fetchWithAuth(`/users/${categoryId}/subcategories/`);
-      if (res.status === 204) {
-        setSubcategories([]);
-      } else if (!res.ok) {
-        let errMsg = 'Unknown error';
-        try {
-          const data = await res.json();
-          errMsg = data?.error || data?.message || JSON.stringify(data) || 'Unknown error';
-        } catch(e) {}
-        if (__DEV__) console.error('Fetch error:', errMsg);
-        setError(errMsg);
-      } else {
-        const data = await res.json();
-        setSubcategories(
-          (data.subcategories || []).map(item => ({
-            subcategoryId: item.id,
-            name: item.subcategory,
-          }))
-        );
+      if (await CacheManager.isCacheStale()) {
+        await CacheManager.bustAndResetCache();
       }
-    } catch (error) {
-      if (__DEV__) console.error('Fetch error:', error);
-      setError(error.message || 'Unknown error');
+
+      const cachedData = await CacheManager.get(cacheKey);
+      if (cachedData) {
+        setSubcategories(cachedData);
+      } else {
+        const res = await fetchWithAuth(`/users/${categoryId}/subcategories/`);
+        if (!res.ok) throw new Error(await res.text() || 'Failed to fetch subcategories');
+        const data = await res.json();
+        const freshData = (data.subcategories || []).map(item => ({
+          subcategoryId: item.id, name: item.subcategory,
+        }));
+        setSubcategories(freshData);
+        await CacheManager.set(cacheKey, freshData);
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Fetch subcategories error:', err);
     } finally {
       setLoading(false);
-      if (__DEV__) console.log(subcategories);
     }
-  };
+  }, [categoryId, fetchWithAuth]);
 
   const handleSubcategoryPress = (subcategoryId, subcategory) => {
     // Don't bother setting loading since navigation will unmount
@@ -78,16 +75,7 @@ const AssortedSubcategories = () => {
     navigation.navigate('AssortedCategories');
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <LinearGradient colors={['#AA336A', '#FFFFFF']} style={styles.gradient} start={[0, 0]} end={[1, 1]}>
-          <Image source={Logo} style={styles.logo} />
-          <ActivityIndicator size="large" color="white" />
-        </LinearGradient>
-      </View>
-    );
-  }
+
 
   return (
     <View style={styles.container}>
@@ -101,23 +89,28 @@ const AssortedSubcategories = () => {
 
         <Text style={[styles.header]}>{categoryName}</Text>
 
-        {error ? (
-          <Text style={styles.errorMessage}>Error fetching data: {error}</Text>
-        ) : (
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} ref={scrollViewRef}>
-            {subcategories.length > 0 ? (
-              subcategories.map((subcategory) => (
-                <SubCategory
-                  key={subcategory.subcategoryId}
-                  text={subcategory.name}
-                  handlePress={() => handleSubcategoryPress(subcategory.subcategoryId, subcategory.name)}
-                />
-              ))
-            ) : (
-              <Text style={styles.errorMessage}>No subcategories available</Text>
-            )}
-          </ScrollView>
-        )}
+        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} ref={scrollViewRef}>
+          {loading ? (
+            <>
+              <AssortedSkeleton />
+              <AssortedSkeleton />
+              <AssortedSkeleton />
+              <AssortedSkeleton />
+            </>
+          ) : error ? (
+            <Text style={styles.errorMessage}>Error fetching data: {error}</Text>
+          ) : subcategories.length > 0 ? (
+            subcategories.map((subcategory) => (
+              <SubCategory
+                key={subcategory.subcategoryId}
+                text={subcategory.name}
+                handlePress={() => handleSubcategoryPress(subcategory.subcategoryId, subcategory.name)}
+              />
+            ))
+          ) : (
+            <Text style={styles.errorMessage}>No subcategories available</Text>
+          )}
+        </ScrollView>
       </LinearGradient>
     </View>
   );

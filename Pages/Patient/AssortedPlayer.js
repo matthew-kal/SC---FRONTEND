@@ -1,73 +1,48 @@
-import React, { useRef, useState, useEffect, useCallback } from 'react'; // Added useState, useEffect, useCallback
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Alert, SafeAreaView, ActivityIndicator } from 'react-native'; // Added ActivityIndicator
-import { Video } from 'expo-video';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import AudioPlayer from '../../Components/AudioPlayer';
+import AudioPlayer from '../../Components/AV/AudioPlayer';
+import VideoPlayer from '../../Components/AV/VideoPlayer';
 
 const AssortedPlayer = ({ route, navigation }) => {
   const { videoUrl, videoTitle, videoDescription, mediaType } = route.params;
   const videoRef = useRef(null);
 
-  // --- NEW: State for media loading and errors within AssortedPlayer ---
   const [mediaLoading, setMediaLoading] = useState(true);
-  const [mediaError, setMediaError] = useState(null); // Stores a user-friendly error message
+  const [mediaError, setMediaError] = useState(null);
 
-  // --- NEW: Validate and prepare media URL on mount ---
+  // NEW: Validate and prepare media URL on mount with a HEAD request
   useEffect(() => {
-    console.log("[AssortedPlayer] Effect running: Initial media URL check.");
-    if (!videoUrl) {
-      console.error("[AssortedPlayer] Error: videoUrl is missing from route params.");
-      setMediaError('Media content URL is missing. Please contact support.');
-      setMediaLoading(false);
-      return;
-    }
-    // Check for "fake" URLs or invalid protocols upfront
-    if (videoUrl.includes('fakeurl.com') || !videoUrl.startsWith('http')) {
-      console.warn(`[AssortedPlayer] Warning: Invalid or mock URL detected: ${videoUrl}`);
-      setMediaError('Invalid media URL detected. Content may not load. Please use a valid, accessible URL (e.g., HTTPS).');
-      setMediaLoading(false);
-      return;
-    }
-    console.log(`[AssortedPlayer] Valid URL format detected: ${videoUrl}`);
-    // If URL seems valid, the specific player component (Video/AudioPlayer) will handle loading.
-    // Set loading to false here, so the player components' own loading indicators take over.
-    setMediaLoading(false);
-    setMediaError(null); // Clear any previous error
+    const validateMediaUrl = async () => {
+      if (!videoUrl || !videoUrl.startsWith('http')) {
+        setMediaError('A valid media URL was not provided.');
+        setMediaLoading(false);
+        return;
+      }
+
+      try {
+        console.log(`[Player] Validating URL: ${videoUrl}`);
+        const response = await fetch(videoUrl, { method: 'HEAD' });
+
+        if (response.ok) {
+          // URL is valid and resource exists
+          setMediaError(null);
+          setMediaLoading(false); // Let the player components handle their own loading
+        } else {
+          // URL is valid but resource is not found (404) or other error
+          setMediaError('This media could not be found. It may have been moved or deleted.');
+          setMediaLoading(false);
+        }
+      } catch (error) {
+        // Network error, DNS error, etc.
+        console.error('[Player] Network error validating URL:', error);
+        setMediaError('A network error occurred. Please check your connection and try again.');
+        setMediaLoading(false);
+      }
+    };
+    validateMediaUrl();
   }, [videoUrl]);
-
-  /* NEW: Video status update handler for loading/error reporting */
-  const handleVideoPlaybackStatusUpdate = useCallback((status) => {
-    // Only set loading to false once the video is actually loaded
-    if (status.isLoaded && mediaLoading) {
-      setMediaLoading(false);
-      console.log("[AssortedPlayer] Video loaded successfully.");
-    }
-    // Check for errors during playback
-    if (status.error && !mediaError) { // Prevent setting same error multiple times
-      const errorMessage = `Video playback error: ${status.error}. Please check your internet connection.`;
-      console.error(`[AssortedPlayer] Video playback error detected: ${status.error}`);
-      setMediaError(errorMessage);
-      setMediaLoading(false); // Stop loading if an error occurs
-      Alert.alert('Video Playback Error', errorMessage);
-    }
-  }, [mediaLoading, mediaError]); // Added mediaLoading, mediaError to dependencies
-
-  /* NEW: Video error handler (for initial load errors from Video component) */
-  const handleVideoError = useCallback((error) => {
-    console.error('[AssortedPlayer] Expo Video onError (initial load):', error);
-    setMediaError('Failed to load video: Check URL, network, or content. Contact support if issue persists.');
-    setMediaLoading(false);
-    Alert.alert('Video Load Error', 'Unable to load video. Please verify the URL or your network connection.');
-  }, []);
-
-  /* NEW: Audio error handler (passed to AudioPlayer component) */
-  const handleAudioError = useCallback((error) => {
-    console.error('[AssortedPlayer] AudioPlayer reported error:', error);
-    setMediaError('Failed to load audio: Check URL, network, or content. Contact support if issue persists.');
-    setMediaLoading(false);
-    Alert.alert('Audio Load Error', 'Unable to load audio. Please verify the URL or your network connection.');
-  }, []);
 
   /* ------------------- NAVIGATION ------------------- */
   const returnHome = useCallback(async () => {
@@ -77,7 +52,7 @@ const AssortedPlayer = ({ route, navigation }) => {
       await videoRef.current.unloadAsync();
     }
     console.log("[AssortedPlayer] Navigating to Dashboard.");
-    navigation.goBack(); // AssortedPlayer uses goBack, not navigate('Dashboard')
+    navigation.navigate('AssortedCategories') // AssortedPlayer uses goBack, not 
   }, [navigation]);
 
   return (
@@ -91,7 +66,7 @@ const AssortedPlayer = ({ route, navigation }) => {
         >
           <Text style={styles.title}>{videoTitle}</Text>
 
-          {/* --- NEW: Conditional Rendering of Media Player / Loading / Error State --- */}
+          {/* --- NEW: Conditional Rendering of Media Player --- */}
           {mediaError ? (
             <View style={styles.mediaErrorContainer}>
               <Icon name="alert-circle-outline" size={60} color="red" />
@@ -100,25 +75,17 @@ const AssortedPlayer = ({ route, navigation }) => {
           ) : mediaLoading ? (
             <View style={styles.mediaLoadingContainer}>
               <ActivityIndicator size="large" color="white" />
-              <Text style={styles.mediaLoadingText}>Loading Media...</Text>
+              <Text style={styles.mediaLoadingText}>Validating Media...</Text>
             </View>
           ) : mediaType === 'video' ? (
-            <Video
-              ref={videoRef}
-              source={{ uri: videoUrl }}
-              style={styles.video}
-              useNativeControls
-              resizeMode="contain"
-              shouldPlay
-              onPlaybackStatusUpdate={handleVideoPlaybackStatusUpdate} // NEW: Use detailed handler
-              onError={handleVideoError} // NEW: Use detailed handler for load errors
+            <VideoPlayer
+              sourceUrl={videoUrl}
+              onPlaybackError={setMediaError}
             />
           ) : (
             <AudioPlayer
               sourceUrl={videoUrl}
-              iconColor="white"
-              iconSize={60}
-              onPlaybackError={handleAudioError} // NEW: Pass error handler to AudioPlayer
+              onPlaybackError={setMediaError}
             />
           )}
 

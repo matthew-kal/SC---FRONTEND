@@ -330,7 +330,6 @@ export class BiometricAuth {
           return { success: false, error: result.error };
         }
         
-        // For other errors, increment failed attempts
         const lockoutTriggered = await this.incrementFailedAttempts();
         
         if (lockoutTriggered) {

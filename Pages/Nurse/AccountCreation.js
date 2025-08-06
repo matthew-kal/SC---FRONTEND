@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { LinearGradient } from 'expo-linear-gradient';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
-import CustomInput from '../../Components/CustomInput';
+import CustomInput from '../../Components/Cards/CustomInput';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useFetchWithAuth } from '../../Components/FetchWithAuth';
+import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
 
 // import Orientation from 'react-native-orientation-locker';  // Developer Mode
 

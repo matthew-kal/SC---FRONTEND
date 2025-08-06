@@ -1,7 +1,7 @@
 import * as Device from 'expo-device';
 import * as Notifications from 'expo-notifications';
 import Constants from 'expo-constants'; 
-import { getSecureItem } from '../Components/Memory';
+import { getSecureItem } from './Memory';
 
 const BASE_URL = 'http://192.168.1.72:80' // 'https://api.surgicalm.com'
 

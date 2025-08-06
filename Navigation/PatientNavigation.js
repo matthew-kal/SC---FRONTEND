@@ -3,7 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Dashboard from '../Pages/Patient/Dashboard';
 import AssortedCategories from '../Pages/Patient/AssortedCategories.js';
 import PatientSettings from '../Pages/Patient/PatientSettings.js';
-import PatientNavbar from '../Components/PatientNavbar';
+import PatientNavbar from '../Components/NavBars/PatientNavbar.js';
 import AssortedSubcategories from '../Pages/Patient/AssortedSubcategories.js'
 import AssortedPlayer from '../Pages/Patient/AssortedPlayer';
 import AssortedModules from '../Pages/Patient/AssortedModules';

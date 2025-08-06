@@ -4,8 +4,8 @@ import {
   Text,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import PrivacyPolicy from '../../Components/PrivacyPolicy';
-import Logout from '../../Components/Logout';
+import PrivacyPolicy from '../../Components/Cards/PrivacyPolicy';
+import Logout from '../../Components/Services/Logout';
 
 const NurseSettings = () => {
   

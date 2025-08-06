@@ -1,13 +1,11 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
-import Logo from '../../Images/Logo.png';
-import miniLogo from '../../Images/mini_logo.png';
-import { useFetchWithAuth } from '../../Components/FetchWithAuth';
-
-
+import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
+import CacheManager from '../../Components/Services/CacheManager';
+import AssortedSkeleton from '../../Components/Skeletons/AssortedSkeleton';
 
 const Module = ({ title, handlePress }) => (
   <TouchableOpacity style={styles.buttonContainer} onPress={handlePress}>
@@ -30,34 +28,40 @@ const AssortedModules = () => {
   useFocusEffect(
     useCallback(() => {
         fetchModules();
-    }, [categoryId, subcategoryId])
+    }, [fetchModules])
   );
 
-const fetchModules = async () => {
-  setError('');
-  try {
-    const res = await fetchWithAuth(`/users/${categoryId}/${subcategoryId}/modules-list/`);
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data?.error || data?.message || 'Failed to fetch modules');
+  const fetchModules = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    const cacheKey = `assorted_modules_${categoryId}_${subcategoryId}`;
+
+    try {
+      if (await CacheManager.isCacheStale()) {
+        await CacheManager.bustAndResetCache();
+      }
+
+      const cachedData = await CacheManager.get(cacheKey);
+      if (cachedData) {
+        setVideos(cachedData);
+      } else {
+        const res = await fetchWithAuth(`/users/${categoryId}/${subcategoryId}/modules-list/`);
+        if (!res.ok) throw new Error(await res.text() || 'Failed to fetch modules');
+        const data = await res.json();
+        const freshData = (data.videos || []).map(video => ({
+          id: video.id ?? video.url, title: video.title, url: video.url,
+          description: video.description, media_type: video.media_type
+        }));
+        setVideos(freshData);
+        await CacheManager.set(cacheKey, freshData);
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Fetch modules error:', err);
+    } finally {
+      setLoading(false);
     }
-    const data = await res.json();
-    const videoData = (data.videos || []).map(video => ({
-      id: video.id ?? video.url,
-      title: video.title,
-      url: video.url,
-      description: video.description,
-      media_type: video.media_type
-    }));
-    setVideos(videoData);
-    if (__DEV__) console.log('[Modules] parsed:', videoData);
-  } catch (error) {
-    console.error('Fetch error:', error);
-    setError(error.message || 'Unknown error');
-  } finally {
-    setLoading(false);
-  }
-};
+  }, [categoryId, subcategoryId, fetchWithAuth]);
 
   const handleNavigate = (videoUrl, videoTitle, videoDescription, mediaType) => {
     navigation.navigate('AssortedPlayer', { videoUrl, videoTitle, videoDescription, mediaType });
@@ -68,21 +72,7 @@ const fetchModules = async () => {
     navigation.navigate('AssortedCategories');
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <LinearGradient
-          colors={['#AA336A', '#FFFFFF']}
-          style={styles.gradient}
-          start={[0, 0]}
-          end={[1, 1]}
-        >
-          <Image source={Logo} style={styles.logo} />
-          <ActivityIndicator size="large" color="white" />
-        </LinearGradient>
-      </View>
-    );
-  }
+
 
   return (
     <View style={styles.container}>
@@ -93,7 +83,7 @@ const fetchModules = async () => {
         end={[1, 1]}
       >
 
-        <View style={[styles.top, , {marginTop: width > 450 ? 50 : 75}]}>
+        <View style={[styles.top, {marginTop: width > 450 ? 50 : 75}]}>
         <TouchableOpacity onPress={handleReturn} style={styles.backbutton}>
           <Icon name={"return-up-back-outline"} style={styles.icon} size={27} color="#AA336A" />
         </TouchableOpacity>
@@ -103,20 +93,27 @@ const fetchModules = async () => {
 
         {error ? (
           <Text style={styles.errorMessage}>Error fetching videos: {error}</Text>
-        ) : 
-        
-        videos.length > 0 ? (
-          <ScrollView contentContainerStyle={styles.scroll}>
-            {videos.map((video, index) => (
-              <Module
-                key={video.id || video.url}
-                title={video.title}
-                handlePress={() => handleNavigate(video.url, video.title, video.description, video.media_type)}
-              />
-            ))}
-          </ScrollView>
         ) : (
-          <Text style={styles.errorMessage}>No modules available</Text>
+          <ScrollView contentContainerStyle={styles.scroll}>
+            {loading ? (
+              <>
+                <AssortedSkeleton />
+                <AssortedSkeleton />
+                <AssortedSkeleton />
+                <AssortedSkeleton />
+              </>
+            ) : videos.length > 0 ? (
+              videos.map((video, index) => (
+                <Module
+                  key={video.id || video.url}
+                  title={video.title}
+                  handlePress={() => handleNavigate(video.url, video.title, video.description, video.media_type)}
+                />
+              ))
+            ) : (
+              <Text style={styles.errorMessage}>No modules available</Text>
+            )}
+          </ScrollView>
         )}
       </LinearGradient>
     </View>

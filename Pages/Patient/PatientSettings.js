@@ -1,15 +1,15 @@
 import React, { useState, useEffect, useCallback, useContext } from 'react';
-import { getSecureItem, deleteSecureItem, clearTokens } from '../../Components/Memory';
+import { getSecureItem, deleteSecureItem, clearTokens } from '../../Components/Services/Memory';
 import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Dimensions } from 'react-native';
 import { Modal, TextInput, Alert } from 'react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { LinearGradient } from 'expo-linear-gradient';
-import CustomInput from '../../Components/CustomInput';
-import { TokenContext } from '../../Components/TokenContext';
+import CustomInput from '../../Components/Cards/CustomInput';
+import { TokenContext } from '../../Components/Services/TokenContext';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useFetchWithAuth } from '../../Components/FetchWithAuth';
-import PrivacyPolicy from '../../Components/PrivacyPolicy';
-import Logout from '../../Components/Logout';
+import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
+import PrivacyPolicy from '../../Components/Cards/PrivacyPolicy';
+import Logout from '../../Components/Services/Logout';
 
 
 const PatientSettings = () => {

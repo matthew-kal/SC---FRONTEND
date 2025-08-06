@@ -12,7 +12,6 @@ export const getSecureItem = async (key) => {
 export const saveSecureItem = async (key, value) => {
   try {
     await SecureStore.setItemAsync(key, value, {
-      // Use the current recommended option for maximum accessibility
       keychainAccessible: SecureStore.WHEN_UNLOCKED, 
     });
   } catch (error) {
@@ -30,7 +29,6 @@ export const deleteSecureItem = async (key) => {
 
 export const clearTokens = async () => {
   try {
-    // Clear all possible token combinations
     const tokensToClear = [
       'accessPatient', 'refreshPatient',
       'accessNurse', 'refreshNurse'

@@ -2,27 +2,43 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useFetchWithAuth } from '../../Components/FetchWithAuth';
+import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
+import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
+
+const PatientListItemSkeleton = () => (
+  <View style={styles.patientItem}>
+    <ShimmerPlaceHolder
+      LinearGradient={LinearGradient}
+      style={{ width: '80%', height: 20, borderRadius: 4 }}
+    />
+  </View>
+);
 
 const PatientLookup = ({ navigation }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [patients, setPatients] = useState([]);
   const [searchAttempted, setSearchAttempted] = useState(false);
-  const [searchBy, setSearchBy] = useState('username'); 
+  const [searchBy, setSearchBy] = useState('text');
+  const [isLoading, setIsLoading] = useState(false); 
   const { width } = Dimensions.get('window');
-  const filterWidth = width > 450 ? '40%' : '90%'
+  const filterWidth = width > 450 ? '40%' : '60%'
   const { getJSON, fetchWithAuth } = useFetchWithAuth();
 
   const searchPatients = async () => {
     if (!searchQuery) return;
 
+    setIsLoading(true);
+    setPatients([]); // Clear previous results immediately
+    setSearchAttempted(false);
+
     try {
       const data = await getJSON(`/users/patients-list/?searchBy=${searchBy}&query=${searchQuery}`);
       setPatients(data);
-      setSearchAttempted(true);
     } catch (error) {
       console.error('Error searching patients:', error);
       setPatients([]);
+    } finally {
+      setIsLoading(false);
       setSearchAttempted(true);
     }
   };
@@ -80,21 +96,17 @@ const PatientLookup = ({ navigation }) => {
         <Text style={styles.title}>Patient Search</Text>
 
         <View style={[styles.buttonContainer, {width: filterWidth}]}>
-          <Icon name="funnel-outline" size={45} color="white" />
+          
+          
+          {/* NEW UNIFIED TEXT SEARCH BUTTON */}
           <TouchableOpacity
-            style={[styles.switchButton, searchBy === 'username' && styles.activeButton]}
-            onPress={() => handleSearchByChange('username')}
+            style={[styles.switchButton, searchBy === 'text' && styles.activeButton]}
+            onPress={() => handleSearchByChange('text')}
           >
-            <Text style={styles.switchButtonText}>User</Text>
+            <Text style={styles.switchButtonText}>Name / Email</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity
-            style={[styles.switchButton, searchBy === 'email' && styles.activeButton]}
-            onPress={() => handleSearchByChange('email')}
-          >
-            <Text style={styles.switchButtonText}>Email</Text>
-          </TouchableOpacity>
-
+          {/* ID SEARCH BUTTON (Unchanged) */}
           <TouchableOpacity
             style={[styles.switchButton, searchBy === 'id' && styles.activeButton]}
             onPress={() => handleSearchByChange('id')}
@@ -106,7 +118,7 @@ const PatientLookup = ({ navigation }) => {
         <View style={styles.searchBar}> 
         <TextInput
           style={styles.input}
-          placeholder={`Search by ${searchBy}${searchBy === 'id' ? " (only #s)..." : "..." }`}
+          placeholder={`Search by ${searchBy === 'id' ? 'ID (only #s)...' : 'Name or Email...'}`}
           value={searchQuery}
           onChangeText={(text) => {
             if (searchBy === 'id') {
@@ -118,27 +130,37 @@ const PatientLookup = ({ navigation }) => {
           keyboardType='default' 
         />
           <TouchableOpacity style={styles.searchButton} onPress={searchPatients}>
-            <Text style={styles.buttonText}>Search</Text>
+          <Icon name="funnel-outline" size={25} color="#AA336A" />
           </TouchableOpacity>
         </View>
 
-        {patients.length > 0 ? (
+        {/* --- START: New Render Logic --- */}
+        {isLoading ? (
+          <View style={{ marginTop: 40, width: 300 }}>
+            <PatientListItemSkeleton />
+            <PatientListItemSkeleton />
+            <PatientListItemSkeleton />
+            <PatientListItemSkeleton />
+          </View>
+        ) : patients.length > 0 ? (
           <FlatList
-           showsVerticalScrollIndicator={false}
+            showsVerticalScrollIndicator={false}
             style={{ marginTop: 40 }}
             data={patients}
             keyExtractor={(item) => item.id.toString()}
             renderItem={({ item }) => (
               <TouchableOpacity style={styles.patientItem} onPress={() => handleUserClick(item)}>
-                <Text style={styles.itemText}> User: 
-                <Text style={{ fontWeight: 'bold' }}> {item.username}</Text>
-                  </Text>
+                <Text style={styles.itemText}>
+                  User: 
+                  <Text style={{ fontWeight: 'bold' }}> {item.username}</Text>
+                </Text>
               </TouchableOpacity>
             )}
           />
         ) : (
-          searchAttempted && <Text style={styles.notFound} >No patients found with that {searchBy}.</Text>
+          searchAttempted && <Text style={styles.notFound}>No patients found with that {searchBy}.</Text>
         )}
+        {/* --- END: New Render Logic --- */}
       </LinearGradient>
     </View>
   );
@@ -168,6 +190,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 20,
+
   },
   switchButton: {
     borderWidth: 3,
@@ -175,7 +198,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     padding: 10,
     borderRadius: 10,
-    width: 80,
+    width: 100,
     alignItems: 'center',
   },
   activeButton: {

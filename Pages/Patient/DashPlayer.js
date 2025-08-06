@@ -1,13 +1,12 @@
 import React, { useState, useCallback, useContext, useRef, useEffect } from 'react'; // Added useEffect
 import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, Dimensions, Alert, ActivityIndicator } from 'react-native';
-import { Video } from 'expo-video';
 import { LinearGradient } from 'expo-linear-gradient';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useFetchWithAuth } from '../../Components/FetchWithAuth';
-import Logo from '../../Images/mini_logo.png';
-import { PatientContext } from '../../Components/PatientContext';
-import AudioPlayer from '../../Components/AudioPlayer';
+import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
+import { PatientContext } from '../../Components/Services/PatientContext';
+import AudioPlayer from '../../Components/AV/AudioPlayer';
+import VideoPlayer from '../../Components/AV/VideoPlayer';
 
 const DashPlayer = ({ route, navigation }) => {
   const {
@@ -27,27 +26,36 @@ const DashPlayer = ({ route, navigation }) => {
   const { refresh, setRefresh } = useContext(PatientContext);
   const { getJSON } = useFetchWithAuth();
 
-  // --- NEW: Validate and prepare media URL on mount ---
+  // NEW: Validate and prepare media URL on mount with a HEAD request
   useEffect(() => {
-    console.log("[DashPlayer] Effect running: Initial media URL check.");
-    if (!videoUrl) {
-      console.error("[DashPlayer] Error: videoUrl is missing from route params.");
-      setMediaError('Media content URL is missing. Please contact support.');
-      setMediaLoading(false);
-      return;
-    }
-    // Check for "fake" URLs or invalid protocols upfront
-    if (videoUrl.includes('fakeurl.com') || !videoUrl.startsWith('http')) {
-      console.warn(`[DashPlayer] Warning: Invalid or mock URL detected: ${videoUrl}`);
-      setMediaError('Invalid media URL detected. Content may not load. Please use a valid, accessible URL (e.g., HTTPS).');
-      setMediaLoading(false);
-      return;
-    }
-    console.log(`[DashPlayer] Valid URL format detected: ${videoUrl}`);
-    // If URL seems valid, the specific player component (Video/AudioPlayer) will handle loading.
-    // Set loading to false here, so the player components' own loading indicators take over.
-    setMediaLoading(false); 
-    setMediaError(null); // Clear any previous error
+    const validateMediaUrl = async () => {
+      if (!videoUrl || !videoUrl.startsWith('http')) {
+        setMediaError('A valid media URL was not provided.');
+        setMediaLoading(false);
+        return;
+      }
+
+      try {
+        console.log(`[Player] Validating URL: ${videoUrl}`);
+        const response = await fetch(videoUrl, { method: 'HEAD' });
+
+        if (response.ok) {
+          // URL is valid and resource exists
+          setMediaError(null);
+          setMediaLoading(false); // Let the player components handle their own loading
+        } else {
+          // URL is valid but resource is not found (404) or other error
+          setMediaError('This media could not be found. It may have been moved or deleted.');
+          setMediaLoading(false);
+        }
+      } catch (error) {
+        // Network error, DNS error, etc.
+        console.error('[Player] Network error validating URL:', error);
+        setMediaError('A network error occurred. Please check your connection and try again.');
+        setMediaLoading(false);
+      }
+    };
+    validateMediaUrl();
   }, [videoUrl]);
 
 
@@ -89,43 +97,6 @@ const DashPlayer = ({ route, navigation }) => {
     }
   }, [getJSON, videoId, navigation, setRefresh, isCompleted, mediaError]); // Added mediaError to dependencies
 
-  /* NEW: Video status update handler for loading/error reporting */
-  const handleVideoPlaybackStatusUpdate = useCallback((status) => {
-    // Only set loading to false once the video is actually loaded
-    if (status.isLoaded && mediaLoading) {
-      setMediaLoading(false);
-      console.log("[DashPlayer] Video loaded successfully.");
-    }
-    // Check for playback finishing
-    if (status.didJustFinish && !status.isLooping) {
-      console.log("[DashPlayer] Video playback finished.");
-      handleComplete();
-    }
-    // Check for errors during playback
-    if (status.error && !mediaError) { // Prevent setting same error multiple times
-      const errorMessage = `Video playback error: ${status.error}. Please check your internet connection.`;
-      console.error(`[DashPlayer] Video playback error detected: ${status.error}`);
-      setMediaError(errorMessage);
-      setMediaLoading(false); // Stop loading if an error occurs
-      Alert.alert('Video Playback Error', errorMessage);
-    }
-  }, [handleComplete, mediaLoading, mediaError]); // Added mediaLoading, mediaError to dependencies
-
-  /* NEW: Video error handler (for initial load errors from Video component) */
-  const handleVideoError = useCallback((error) => {
-    console.error('[DashPlayer] Expo Video onError (initial load):', error);
-    setMediaError('Failed to load video: Check URL, network, or content. Contact support if issue persists.');
-    setMediaLoading(false);
-    Alert.alert('Video Load Error', 'Unable to load video. Please verify the URL or your network connection.');
-  }, []);
-
-  /* NEW: Audio error handler (passed to AudioPlayer component) */
-  const handleAudioError = useCallback((error) => {
-    console.error('[DashPlayer] AudioPlayer reported error:', error);
-    setMediaError('Failed to load audio: Check URL, network, or content. Contact support if issue persists.');
-    setMediaLoading(false);
-    Alert.alert('Audio Load Error', 'Unable to load audio. Please verify the URL or your network connection.');
-  }, []);
 
 
   /* ------------------- NAVIGATION ------------------- */
@@ -149,12 +120,11 @@ const DashPlayer = ({ route, navigation }) => {
           <TouchableOpacity onPress={returnHome} style={styles.button}>
             <Icon name="return-up-back-outline" size={25} color="#AA336A" />
           </TouchableOpacity>
-          <Image source={Logo} style={styles.logo} />
         </View>
 
         <Text style={styles.title}>{videoTitle}</Text>
 
-        {/* --- NEW: Conditional Rendering of Media Player / Loading / Error State --- */}
+        {/* --- NEW: Conditional Rendering of Media Player --- */}
         {mediaError ? (
           <View style={styles.mediaErrorContainer}>
             <Icon name="alert-circle-outline" size={60} color="red" />
@@ -163,26 +133,19 @@ const DashPlayer = ({ route, navigation }) => {
         ) : mediaLoading ? (
           <View style={styles.mediaLoadingContainer}>
             <ActivityIndicator size="large" color="white" />
-            <Text style={styles.mediaLoadingText}>Loading Media...</Text>
+            <Text style={styles.mediaLoadingText}>Validating Media...</Text>
           </View>
         ) : mediaType === 'video' ? (
-          <Video
-            ref={videoRef}
-            source={{ uri: videoUrl }}
-            style={styles.video}
-            useNativeControls
-            resizeMode="contain"
-            shouldPlay
-            onPlaybackStatusUpdate={handleVideoPlaybackStatusUpdate} // NEW: Use detailed handler
-            onError={handleVideoError} // NEW: Use detailed handler for load errors
+          <VideoPlayer
+            sourceUrl={videoUrl}
+            onFinish={handleComplete} // Only DashPlayer has handleComplete
+            onPlaybackError={setMediaError}
           />
         ) : (
           <AudioPlayer
             sourceUrl={videoUrl}
-            iconColor="white"
-            iconSize={70}
-            onFinish={handleComplete}
-            onPlaybackError={handleAudioError} // NEW: Pass error handler to AudioPlayer
+            onFinish={handleComplete} // Only DashPlayer has handleComplete
+            onPlaybackError={setMediaError}
           />
         )}
 

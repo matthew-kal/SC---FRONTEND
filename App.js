@@ -5,8 +5,8 @@ import Login from './Pages/Login/Login';
 import NurseNavigation from './Navigation/NurseNavigation';
 import PatientNavigation from './Navigation/PatientNavigation';
 import PasswordRecovery from './Pages/Login/PasswordRecovery';
-import { PatientProvider } from './Components/PatientContext';
-import { TokenProvider } from './Components/TokenContext';
+import { PatientProvider } from './Components/Services/PatientContext';
+import { TokenProvider } from './Components/Services/TokenContext';
 import { navigationRef } from './Navigation/NavRef';
 
 const Stack = createStackNavigator();

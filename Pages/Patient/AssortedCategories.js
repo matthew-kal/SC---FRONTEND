@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
+import { useState, useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions, RefreshControl, FlatList } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
 import Logo from '../../Images/Logo.png';
-import { useFetchWithAuth } from '../../Components/FetchWithAuth';
+import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
+import AssortedSkeleton from '../../Components/Skeletons/AssortedSkeleton';
+import CacheManager from '../../Components/Services/CacheManager';
 
 const Category = ({ text, handlePress, icon }) => (
   <TouchableOpacity style={styles.buttonContainer} onPress={handlePress}>
@@ -22,52 +24,51 @@ const AssortedCategories = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const {width} = Dimensions.get("window") 
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-useEffect(() => {
-  fetchCategories();
-}, [])
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
-  const fetchCategories = async () => {
+  const onRefresh = useCallback(async () => {
+    console.log('[Refresh] User initiated pull-to-refresh.');
+    setIsRefreshing(true);
+    // Force a cache bust, then fetch fresh data
+    await CacheManager.bustAndResetCache();
+    await fetchCategories(); // fetchCategories will handle the rest
+    setIsRefreshing(false);
+  }, [fetchCategories]); 
+
+  const fetchCategories = useCallback(async () => {
     setLoading(true);
     setError(null);
-    try {
-      const response = await fetchWithAuth('/users/categories/', { method: 'GET' });
+    const cacheKey = 'assorted_categories';
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+    try {
+      if (await CacheManager.isCacheStale()) {
+        await CacheManager.bustAndResetCache();
       }
 
-      const data = await response.json();
-      setCategories(
-        data.categories.map(item => ({
-          id: item.id,
-          name: item.category,
-          icon: item.icon,
-        }))
-      );
-    } catch (error) {
-      console.error('Fetch error:', error);
-      setError(error.message || 'Unknown error occurred');
+      const cachedData = await CacheManager.get(cacheKey);
+      if (cachedData) {
+        setCategories(cachedData);
+      } else {
+        const res = await fetchWithAuth('/users/categories/');
+        if (!res.ok) throw new Error(await res.text() || 'Failed to fetch categories');
+        const data = await res.json();
+        const freshData = (data.categories || []).map(item => ({
+          id: item.id, name: item.category, icon: item.icon,
+        }));
+        setCategories(freshData);
+        await CacheManager.set(cacheKey, freshData);
+      }
+    } catch (err) {
+      setError(err.message);
+      console.error('Fetch categories error:', err);
     } finally {
       setLoading(false);
     }
-  };
-
-  if (loading) {
-    return (
-      <View style={styles.container}>
-      <LinearGradient
-      colors={['#AA336A', '#FFFFFF']}
-      style={styles.gradient}
-      start={[0, 0]}
-      end={[1, 1]}
-      >
-      <Image source={Logo} style={styles.logo} />
-      <ActivityIndicator size="large" color="white" />
-      </LinearGradient>
-    </View>
-    );
-  }
+  }, [fetchWithAuth]);
 
   return (
     <View style={styles.container}>
@@ -78,26 +79,44 @@ useEffect(() => {
         end={[1, 1]}
       >
         <Text style={[styles.header, {marginTop: width > 450 ? 110 : 75}]}>General Modules</Text>
-        {loading ? (
-          <Text style={styles.errorMessage}>Loading...</Text>
-        ) : error ? (
-          <Text style={styles.errorMessage}>Error fetching data: {error}</Text>
-        ) : (
-          <ScrollView contentContainerStyle={styles.scroll} >
-            {categories.length > 0 ? (
-              categories.map((category) => (
-                <Category
-                  key={category.id}
-                  text={category.name}
-                  icon={category.icon}
-                  handlePress={() => navigation.navigate('AssortedSubcategories', { categoryName: category.name, categoryId: category.id })}
-                />
-              ))
-            ) : (
-              <Text style={styles.errorMessage}>No modules available</Text>
-            )}
-          </ScrollView>
-        )}
+        <FlatList
+          data={categories}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <Category
+              text={item.name}
+              icon={item.icon}
+              handlePress={() => navigation.navigate('AssortedSubcategories', { categoryName: item.name, categoryId: item.id })}
+            />
+          )}
+          contentContainerStyle={styles.scroll}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={onRefresh}
+              tintColor="#FFFFFF" // Spinner color for iOS
+            />
+          }
+          ListHeaderComponent={
+            loading && categories.length === 0 ? (
+              <>
+                <AssortedSkeleton showIcon={true} />
+                <AssortedSkeleton showIcon={true} />
+                <AssortedSkeleton showIcon={true} />
+                <AssortedSkeleton showIcon={true} />
+              </>
+            ) : null
+          }
+          ListEmptyComponent={
+            !loading ? (
+              error ? (
+                <Text style={styles.errorMessage}>Error fetching data: {error}</Text>
+              ) : (
+                <Text style={styles.errorMessage}>No modules available</Text>
+              )
+            ) : null
+          }
+        />
       </LinearGradient>
     </View>
   );

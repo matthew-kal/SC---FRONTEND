@@ -2,9 +2,9 @@ import React, { useState, useEffect, useContext } from 'react';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { View, TouchableOpacity, StyleSheet } from 'react-native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import { getSecureItem, deleteSecureItem } from './Memory';
-import { TokenContext } from './TokenContext'
-import { useFetchWithAuth } from './FetchWithAuth';
+import { getSecureItem, deleteSecureItem } from '../Services/Memory';
+import { TokenContext } from '../Services/TokenContext'
+import { useFetchWithAuth } from '../Services/FetchWithAuth';
 
 const NurseNavbar = () => {
   const navigation = useNavigation();
