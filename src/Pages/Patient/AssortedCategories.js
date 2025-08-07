@@ -3,7 +3,6 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIn
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
 import { useNavigation } from '@react-navigation/native';
-import Logo from '../../Images/Logo.png';
 import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
 import AssortedSkeleton from '../../Components/Skeletons/AssortedSkeleton';
 import CacheManager from '../../Components/Services/CacheManager';

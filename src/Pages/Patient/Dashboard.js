@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, Image, Dimensions } from 'react-nat
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import Graph from '../../Components/Cards/Graph.js';
-import Logo from '../../Images/Logo.png';
+import Logo from '../../../assets/Logo.png'; 
 import { PatientContext } from '../../Components/Services/PatientContext';
 import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth.js';
 import ModuleCard from '../../Components/Cards/ModuleCard.js';

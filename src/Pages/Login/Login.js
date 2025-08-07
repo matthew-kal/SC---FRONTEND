@@ -5,7 +5,7 @@ import CustomInput from '../../Components/Cards/CustomInput';
 import { getSecureItem, saveSecureItem, deleteSecureItem } from '../../Components/Services/Memory';
 import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/cairo';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import Logo from '../../Images/Logo.png'; 
+import Logo from '../../../assets/Logo.png'; 
 import { PatientContext } from '../../Components/Services/PatientContext';
 import { TokenContext } from '../../Components/Services/TokenContext';
 import { registerForPushNotificationsAsync } from '../../Components/Services/Notifications';
