@@ -14,21 +14,11 @@ import BiometricAuth from '../../Components/Services/BiometricAuth';
 const BASE_URL = 'http://192.168.1.72:80' // 'https://api.surgicalm.com'
 
 
-const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, password, setPassword, onSubmit, isPatient }) => {
+const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, password, setPassword, onSubmit, isPatient, isLoading }) => {
   const navigation = useNavigation();
   const { width } = Dimensions.get('window');
   const innerSizer = width < 400 ? 22 : 25;
-  const [loginDisabled, setLoginDisabled] = useState(false);
 
-  const handleLoginPress = () => {
-  if (username && password) {
-    setLoginDisabled(true);
-    onSubmit();  
-    setTimeout(() => setLoginDisabled(false), 4000);
-  } else {
-    onSubmit();  
-  }
-};
   return (
     <KeyboardAvoidingView style={styles.buttonContainer}>
       <CustomInput
@@ -45,16 +35,15 @@ const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, pa
         secureTextEntry
       />
 
-      {/* Buttons Side by Side */}
       <View style={[styles.loginButtons, {marginRight: isPatient ? 30 : 0}]}>
          <TouchableOpacity
           style={[
             styles.finalLogin,
             styles.halfWidthButton,
-            loginDisabled && { opacity: 0.5 },
+            isLoading && { opacity: 0.5 },
           ]}
-          onPress={handleLoginPress}
-          disabled={loginDisabled}
+          onPress={onSubmit}
+          disabled={isLoading}
         >
           <Text style={[styles.innerFinal, { fontSize: innerSizer }]}>
             Login

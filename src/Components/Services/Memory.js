@@ -42,9 +42,6 @@ export const clearTokens = async () => {
       }
     }
     
-    // Also clear patient biometric-related data for security
-    // Note: Biometric auth is only available for patients, but we clear this data
-    // whenever any tokens are cleared for comprehensive security cleanup
     const biometricKeys = [
       'biometricPreferences',
       'biometricFailedAttempts', 
@@ -56,7 +53,6 @@ export const clearTokens = async () => {
         await SecureStore.deleteItemAsync(biometricKey);
         console.log(`[clearTokens] Cleared ${biometricKey}`);
       } catch (error) {
-        // Continue if key doesn't exist
       }
     }
   } catch (error) {

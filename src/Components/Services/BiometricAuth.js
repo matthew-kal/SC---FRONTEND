@@ -2,18 +2,14 @@ import * as LocalAuthentication from 'expo-local-authentication';
 import { Alert } from 'react-native';
 import { getSecureItem, saveSecureItem, deleteSecureItem, clearTokens } from './Memory';
 
-// Constants for biometric authentication
 const BIOMETRIC_PREFERENCES_KEY = 'biometricPreferences';
 const FAILED_ATTEMPTS_KEY = 'biometricFailedAttempts';
 const LOCKOUT_TIMESTAMP_KEY = 'biometricLockoutTimestamp';
-const MAX_FAILED_ATTEMPTS = 3;
-const LOCKOUT_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION = 5 * 60 * 1000; 
 
 export class BiometricAuth {
   
-  /**
-   * Check if the device supports biometric authentication
-   */
   static async isAvailable() {
     try {
       const isEnrolled = await LocalAuthentication.isEnrolledAsync();
@@ -33,9 +29,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Get the types of biometric authentication available on the device
-   */
   static async getSupportedTypes() {
     try {
       const types = await LocalAuthentication.supportedAuthenticationTypesAsync();
@@ -60,9 +53,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Check if user has opted into biometric authentication
-   */
   static async getUserPreference() {
     try {
       const preference = await getSecureItem(BIOMETRIC_PREFERENCES_KEY);
@@ -73,9 +63,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Save user's biometric authentication preference
-   */
   static async setUserPreference(enabled, userType) {
     try {
       const preference = {
@@ -94,9 +81,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Check if user is currently locked out due to failed attempts
-   */
   static async isLockedOut() {
     try {
       const lockoutTimestamp = await getSecureItem(LOCKOUT_TIMESTAMP_KEY);
@@ -107,7 +91,6 @@ export class BiometricAuth {
       const isStillLockedOut = (currentTime - lockoutTime) < LOCKOUT_DURATION;
       
       if (!isStillLockedOut) {
-        // Lockout period has expired, clear the lockout
         await this.clearLockout();
       }
       
@@ -123,9 +106,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Get current failed attempt count
-   */
   static async getFailedAttempts() {
     try {
       const attempts = await getSecureItem(FAILED_ATTEMPTS_KEY);
@@ -136,9 +116,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Increment failed attempt counter
-   */
   static async incrementFailedAttempts() {
     try {
       const currentAttempts = await this.getFailedAttempts();
@@ -160,9 +137,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Clear failed attempts counter
-   */
   static async clearFailedAttempts() {
     try {
       await deleteSecureItem(FAILED_ATTEMPTS_KEY);
@@ -172,9 +146,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Clear lockout state
-   */
   static async clearLockout() {
     try {
       await deleteSecureItem(LOCKOUT_TIMESTAMP_KEY);
@@ -185,20 +156,14 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Initiate security lockout - clear all tokens and set lockout timestamp
-   */
   static async initiateSecurityLockout() {
     try {
       console.log('[BiometricAuth] Initiating security lockout due to repeated failures');
       
-      // Clear all authentication tokens
       await clearTokens();
       
-      // Set lockout timestamp
       await saveSecureItem(LOCKOUT_TIMESTAMP_KEY, Date.now().toString());
       
-      // Clear failed attempts since we're now locked out
       await this.clearFailedAttempts();
       
       console.log('[BiometricAuth] Security lockout initiated');
@@ -214,13 +179,8 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Prompt user to enable biometric authentication after first successful login
-   * Note: This feature is only available for patients
-   */
   static async promptForBiometricSetup(userType) {
     try {
-      // Only allow biometric setup for patients
       if (userType !== 'patient') {
         console.log('[BiometricAuth] Biometric authentication is only available for patients');
         return false;
@@ -267,12 +227,8 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Perform biometric authentication
-   */
   static async authenticate() {
     try {
-      // Check if user is locked out
       const isLockedOut = await this.isLockedOut();
       if (isLockedOut) {
         Alert.alert(
@@ -283,14 +239,12 @@ export class BiometricAuth {
         return { success: false, error: 'LOCKED_OUT' };
       }
 
-      // Check user preferences
       const userPreference = await this.getUserPreference();
       if (!userPreference || !userPreference.enabled) {
         console.log('[BiometricAuth] Biometric authentication not enabled by user');
         return { success: false, error: 'NOT_ENABLED' };
       }
 
-      // Check device availability
       const isAvailable = await this.isAvailable();
       if (!isAvailable) {
         console.log('[BiometricAuth] Biometric authentication not available');
@@ -307,14 +261,13 @@ export class BiometricAuth {
         subPromptMessage: 'Use your biometric authentication to securely access your healthcare content',
         cancelLabel: 'Use Password',
         fallbackLabel: 'Login with Username and Password',
-        disableDeviceFallback: false, // Allow iOS to handle passcode fallback
+        disableDeviceFallback: false, 
         requireConfirmation: false,
       });
 
       console.log('[BiometricAuth] Authentication result:', result);
 
       if (result.success) {
-        // Clear any previous failed attempts on successful auth
         await this.clearFailedAttempts();
         await this.clearLockout();
         
@@ -324,7 +277,6 @@ export class BiometricAuth {
           authType: 'biometric'
         };
       } else {
-        // Handle authentication failure
         if (result.error === 'UserCancel' || result.error === 'UserFallback') {
           console.log('[BiometricAuth] User cancelled or chose fallback');
           return { success: false, error: result.error };
@@ -345,7 +297,6 @@ export class BiometricAuth {
     } catch (error) {
       console.error('[BiometricAuth] Authentication error:', error);
       
-      // On critical errors, increment failed attempts
       const lockoutTriggered = await this.incrementFailedAttempts();
       
       return { 
@@ -356,9 +307,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Disable biometric authentication for the user
-   */
   static async disableBiometricAuth() {
     try {
       await deleteSecureItem(BIOMETRIC_PREFERENCES_KEY);
@@ -370,9 +318,6 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Debug helper: Reset all biometric data (for troubleshooting)
-   */
   static async resetBiometricData() {
     try {
       await deleteSecureItem(BIOMETRIC_PREFERENCES_KEY);
@@ -386,13 +331,9 @@ export class BiometricAuth {
     }
   }
 
-  /**
-   * Check if biometric authentication should be attempted for stored tokens
-   * Note: This feature is only available for patients
-   */
+
   static async shouldAttemptBiometricAuth(userType) {
     try {
-      // Only allow biometric authentication for patients
       if (userType !== 'patient') {
         console.log('[BiometricAuth] Biometric authentication is only available for patients');
         return false;

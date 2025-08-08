@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     borderWidth: 3,
     borderRadius: 10,
     marginBottom: 10,
-    backgroundColor: 'rgba(0,0,0,0.5)', // Dim background
+    backgroundColor: 'rgba(0,0,0,0.5)', 
   },
   mediaLoadingText: {
     marginTop: 10,
