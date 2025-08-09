@@ -393,9 +393,51 @@ This service handles the logic for registering a device to receive push notifica
 | :--- | :--- | :--- |
 | `registerForPushNotificationsAsync` | *None* | An async function that performs all steps to register for push notifications: checks for a logged-in user and physical device, requests user permission, gets the Expo Push Token, and sends the token to the backend server. |
 
+## Part II Section III: *Navigation Directories*
+This section documents the files that define the application's root structure, navigation flows, and global context providers.
+
+---
+### App.js
+
+**a. Overview**
+This is the absolute root component of the application. Its primary responsibility is to set up the top-level navigation container and wrap the entire app in global context providers, making routing and global state available to all other components.
+
+**b. Core Logic & Design Decisions**
+* **Global Context Providers**: The entire component tree is wrapped within `TokenProvider` and `PatientProvider`.
+    * **Rationale**: Placing the providers at the highest possible level is the correct way to implement global state. This ensures that any component, no matter how deeply nested, can access authentication status and other global values.
+* **Root Stack Navigator**: The component uses a `StackNavigator` as its root navigator.
+    * **Rationale**: This stack manages the primary states of the application. It contains the unauthenticated screens (`Login`, `PasswordRecovery`) and the entire authenticated sub-navigators (`PatientNavigation`, `NurseNavigation`). This cleanly separates the unauthenticated and authenticated sections of the app. The `gestureEnabled: false` option is a deliberate choice to prevent users from accidentally swiping back to a previous screen in the stack, such as from the dashboard back to the login screen.
+
+**c. Services & Hooks Consumed**
+* `NavigationContainer`, `createStackNavigator`: From React Navigation, to create the app's routing structure.
+* `TokenProvider`, `PatientProvider`: The app's custom context providers for global state.
+* `navigationRef`: The global navigation reference is attached here.
+
+---
+### NurseNavigation.js & PatientNavigation.js
+
+**a. Overview**
+These two files define the primary navigation structures for authenticated 'nurse' and 'patient' users, respectively. Both are built using a `BottomTabNavigator` to provide a familiar tab-based interface for each user role.
+
+**b. Core Logic & Design Decisions**
+* **Custom Tab Bar**: Both navigators use the `tabBar` prop to render a custom component (`NurseNavbar` or `PatientNavbar`) instead of the default React Navigation tab bar.
+    * **Rationale**: This is the standard method for replacing the default UI with a fully custom, branded navigation bar that matches the application's aesthetic.
+* **Screen Registration**: Each navigator contains a flat list of all `Tab.Screen` components available to that user role.
+    * **Rationale**: The navigator is structured as a single `Tab.Navigator` that contains both the primary tab screens (like `Dashboard`) and the secondary screens that are navigated to from them (like `MediaPlayerScreen`). This keeps all screens for a given user role encapsulated within a single navigator file.
+
+---
+### NavRef.js
+
+**a. Overview**
+A simple utility module that creates and exports a global reference to the root `NavigationContainer`.
+
+**b. Core Logic & Design Decisions**
+* **`React.createRef()`**: This creates a reference object that can be attached to a component to gain imperative access to it.
+* **Rationale**: This is the standard React Navigation pattern for **enabling navigation from outside of a React screen component**. Services like `FetchWithAuth.js` do not have access to the `navigation` prop. By importing this `navigationRef`, they can dispatch global navigation actions, such as resetting the entire app back to the `Login` screen when a user's session fully expires. This is a crucial piece of the app's architecture for robustly handling authentication state changes.
+
 ---
 
-## Part III Section I:  Screens & Features of the *Login Directory*
+## Part III Section I: Screens & Features of the *Login Directory*
 
 This section establishes the core rules, structure, and aesthetic principles that govern the Login portion of the application. Understanding these foundations is crucial before diving into specific components or screens. 
 
