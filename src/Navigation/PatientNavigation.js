@@ -5,9 +5,8 @@ import AssortedCategories from '../Pages/Patient/AssortedCategories.js';
 import PatientSettings from '../Pages/Patient/PatientSettings.js';
 import PatientNavbar from '../Components/NavBars/PatientNavbar.js';
 import AssortedSubcategories from '../Pages/Patient/AssortedSubcategories.js'
-import AssortedPlayer from '../Pages/Patient/AssortedPlayer';
 import AssortedModules from '../Pages/Patient/AssortedModules';
-import DashPlayer from '../Pages/Patient/DashPlayer.js';
+import MediaPlayer from '../Pages/Patient/MediaPlayer';
 
 const Tab = createBottomTabNavigator();
 
@@ -22,9 +21,8 @@ const PatientNavigation = () => {
       <Tab.Screen name="AssortedCategories" component={AssortedCategories} />
       <Tab.Screen name="PatientSettings" component={PatientSettings} />
       <Tab.Screen name="AssortedSubcategories" component={AssortedSubcategories} />
-      <Tab.Screen name="DashPlayer" component={DashPlayer} />
+      <Tab.Screen name="MediaPlayer" component={MediaPlayer} />
       <Tab.Screen name="AssortedModules" component={AssortedModules} />
-      <Tab.Screen name="AssortedPlayer" component={AssortedPlayer} />
     </Tab.Navigator>
   );
 };

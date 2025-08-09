@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
+import React, { useState, useCallback } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -24,7 +24,6 @@ const AssortedSubcategories = () => {
   const [error, setError] = useState('');
   const route = useRoute();
   const { categoryName, categoryId } = route.params;
-  const scrollViewRef = useRef(null);
   const { width } = Dimensions.get("window");
   const { fetchWithAuth } = useFetchWithAuth();
 
@@ -89,28 +88,37 @@ const AssortedSubcategories = () => {
 
         <Text style={[styles.header]}>{categoryName}</Text>
 
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll} ref={scrollViewRef}>
-          {loading ? (
-            <>
-              <AssortedSkeleton />
-              <AssortedSkeleton />
-              <AssortedSkeleton />
-              <AssortedSkeleton />
-            </>
-          ) : error ? (
-            <Text style={styles.errorMessage}>Error fetching data: {error}</Text>
-          ) : subcategories.length > 0 ? (
-            subcategories.map((subcategory) => (
-              <SubCategory
-                key={subcategory.subcategoryId}
-                text={subcategory.name}
-                handlePress={() => handleSubcategoryPress(subcategory.subcategoryId, subcategory.name)}
-              />
-            ))
-          ) : (
-            <Text style={styles.errorMessage}>No subcategories available</Text>
+        <FlatList
+          data={subcategories}
+          keyExtractor={(item) => item.subcategoryId.toString()}
+          renderItem={({ item }) => (
+            <SubCategory
+              text={item.name}
+              handlePress={() => handleSubcategoryPress(item.subcategoryId, item.name)}
+            />
           )}
-        </ScrollView>
+          contentContainerStyle={styles.scroll}
+          ListHeaderComponent={
+            loading && (
+              <>
+                <AssortedSkeleton />
+                <AssortedSkeleton />
+                <AssortedSkeleton />
+                <AssortedSkeleton />
+              </>
+            )
+          }
+          ListEmptyComponent={
+            !loading ? (
+              error ? (
+                <Text style={styles.errorMessage}>Error fetching data: {error}</Text>
+              ) : (
+                <Text style={styles.errorMessage}>No subcategories available</Text>
+              )
+            ) : null
+          }
+          showsVerticalScrollIndicator={false}
+        />
       </LinearGradient>
     </View>
   );

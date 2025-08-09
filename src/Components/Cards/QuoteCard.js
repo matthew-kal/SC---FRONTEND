@@ -13,7 +13,7 @@ const QuoteCard = ({ text }) => {
 };
 
 const styles = StyleSheet.create({
-    quote: { borderRadius: 10, borderWidth: 2, borderColor: '#AA336A', padding: 10, backgroundColor: 'white', alignItems: 'center', alignSelf: 'center' },
+    quote: { borderRadius: 10, borderWidth: 1, borderColor: '#AA336A', padding: 10, backgroundColor: 'white', alignItems: 'center', alignSelf: 'center' },
     quoteText: { fontFamily: 'Cairo', fontSize: 18, textAlign: 'center' },
 });
 

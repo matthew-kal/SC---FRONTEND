@@ -2,9 +2,9 @@ import React from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import { VictoryBar, VictoryChart, VictoryAxis, VictoryLabel } from 'victory-native'; 
 
-const Graph = ({ weeklyData, dailyData }) => {
+const Graph = ({ weeklyData, dailyData, containerStyle }) => {
   return (
-    <View style={styles.container}> 
+    <View style={[styles.container, containerStyle]}>
       <View style={styles.sup}>
         <View style={styles.supInner}>
           <Text style={styles.supText}> 
@@ -52,8 +52,6 @@ const Graph = ({ weeklyData, dailyData }) => {
 
 const styles = StyleSheet.create({
   container: {
-    height: 200, 
-    width: 340,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -62,6 +60,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center', 
     width: '100%',
+    marginLeft: 15,
   },
   supInner: {
     justifyContent: 'center',

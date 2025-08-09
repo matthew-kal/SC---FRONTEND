@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { useContext, Alert } from 'react';
 import { getSecureItem, clearTokens, saveSecureItem } from './Memory';
 import { TokenContext } from './TokenContext';
 import { CommonActions } from '@react-navigation/native';
@@ -97,6 +97,7 @@ export const useFetchWithAuth = () => {
         console.error('[fetchWithAuth] Failed to refresh access token. Forcing logout.');
         await clearTokens();
         setUserType('');
+        Alert.alert('Session expired.', 'Please log in again.');
         if (navigationRef.current) {
           navigationRef.current.dispatch(
           CommonActions.reset({ index:0, routes:[{name:'Login'}] })

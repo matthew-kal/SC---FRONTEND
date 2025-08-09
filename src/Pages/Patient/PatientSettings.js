@@ -10,6 +10,8 @@ import Icon from 'react-native-vector-icons/Ionicons';
 import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
 import PrivacyPolicy from '../../Components/Cards/PrivacyPolicy';
 import Logout from '../../Components/Services/Logout';
+import PatientDetailsSkeleton from '../../Components/Skeletons/PatientDetailsSkeleton';
+import PatientInfoCard from '../../Components/Cards/PatientInfoCard';
 
 
 const PatientSettings = () => {
@@ -25,6 +27,7 @@ const PatientSettings = () => {
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmNewPassword, setConfirmNewPassword] = useState(''); 
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
 
   const {width, _} = Dimensions.get('window');
 
@@ -66,7 +69,7 @@ const PatientSettings = () => {
       }
     } catch (err) {
       console.error('Delete error:', err);
-      Alert.alert('Error', 'Please logout, log back in, and try again.');
+      Alert.alert('Network Error', 'A network error occurred. Please check your connection and try again.');
       setDeletePassword('');
     }
   };
@@ -105,6 +108,7 @@ const PatientSettings = () => {
       Alert.alert('New password and confirm password do not match');
       return;
     }
+    setIsChangingPassword(true);
     try {
       const response = await fetchWithAuth('/users/change-password/', {
         method: 'POST',
@@ -134,10 +138,12 @@ const PatientSettings = () => {
       setConfirmNewPassword('');
     } catch (error) {
       console.error('Error changing password:', error);
-      Alert.alert('Error changing password');
+      Alert.alert('Network Error', 'A network error occurred. Please check your connection and try again.');
       setOldPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
+    } finally {
+      setIsChangingPassword(false);
     }
   };
 
@@ -155,29 +161,14 @@ const PatientSettings = () => {
         <ScrollView style={{marginBottom: 40}}  showsVerticalScrollIndicator={false}> 
       <Text style={[styles.title, {marginTop: 30}]}>Your Information</Text>
       
-      
-      <View style={styles.info}>
 
-      {loading ? (
-      <View style={styles.loader}>
-        <ActivityIndicator size="large" color="#AA336A" />
-      </View>
-    ) : (
-      <View> 
-        <Text style={styles.innerText}>
-          Username: <Text style={{ fontWeight: 'bold' }}>{username}</Text>
-        </Text>
-        <Text style={styles.innerText}>
-          Email: <Text style={{ fontWeight: 'bold' }}>{email}</Text>
-        </Text>
-        <Text style={styles.innerText}>
-          ID: <Text style={{ fontWeight: 'bold' }}>{id}</Text>
-        </Text>
-      </View>
-        )}
 
-      </View>
-
+      {loading 
+      ? (
+        <PatientDetailsSkeleton containerStyle={[styles.cardContainer, { width: width < 450 ? '90%' : '50%' }]} />
+      ) : (
+        <PatientInfoCard containerStyle={[styles.cardContainer, { width: width < 450 ? '90%' : '50%' }]} username={username} email={email} id={id} />
+      )}
 
       <Text style={styles.title}>Change Password</Text>
 
@@ -202,7 +193,11 @@ const PatientSettings = () => {
           />
         </View>
 
-        <TouchableOpacity style={styles.button} onPress={handleChangePassword}>
+        <TouchableOpacity 
+          style={[styles.button, isChangingPassword && { opacity: 0.5 }]} 
+          onPress={handleChangePassword}
+          disabled={isChangingPassword}
+        >
           <Text style={styles.buttonText}>Change Password</Text>
         </TouchableOpacity>
         
@@ -348,14 +343,17 @@ const styles = StyleSheet.create({
     marginTop: 30,
     marginBottom: 20,
   },
-  info: {
+  icon: {
+    alignSelf: 'center'
+  },
+  cardContainer: {
     borderWidth: 3,
+    padding: 15,
+    borderRadius: 10,
     borderColor: '#AA336A',
     backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 10,
-  }, 
-  icon: {
+    marginBottom: 20,
+    alignItems: 'center',
     alignSelf: 'center'
   }
 });

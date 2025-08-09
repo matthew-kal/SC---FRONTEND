@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -27,12 +27,13 @@ const AssortedModules = () => {
 
   useFocusEffect(
     useCallback(() => {
-        fetchModules();
+      setLoading(true);
+      fetchModules();
+      setLoading(false);
     }, [fetchModules])
   );
 
   const fetchModules = useCallback(async () => {
-    setLoading(true);
     setError('');
     const cacheKey = `assorted_modules_${categoryId}_${subcategoryId}`;
 
@@ -58,13 +59,11 @@ const AssortedModules = () => {
     } catch (err) {
       setError(err.message);
       console.error('Fetch modules error:', err);
-    } finally {
-      setLoading(false);
     }
   }, [categoryId, subcategoryId, fetchWithAuth]);
 
   const handleNavigate = (videoUrl, videoTitle, videoDescription, mediaType) => {
-    navigation.navigate('AssortedPlayer', { videoUrl, videoTitle, videoDescription, mediaType });
+    navigation.navigate('MediaPlayer', { mode: 'library', videoUrl, videoTitle, videoDescription, mediaType });
   };
 
   const handleReturn = () => {
@@ -94,26 +93,37 @@ const AssortedModules = () => {
         {error ? (
           <Text style={styles.errorMessage}>Error fetching videos: {error}</Text>
         ) : (
-          <ScrollView contentContainerStyle={styles.scroll}>
-            {loading ? (
-              <>
-                <AssortedSkeleton />
-                <AssortedSkeleton />
-                <AssortedSkeleton />
-                <AssortedSkeleton />
-              </>
-            ) : videos.length > 0 ? (
-              videos.map((video, index) => (
-                <Module
-                  key={video.id || video.url}
-                  title={video.title}
-                  handlePress={() => handleNavigate(video.url, video.title, video.description, video.media_type)}
-                />
-              ))
-            ) : (
-              <Text style={styles.errorMessage}>No modules available</Text>
+          <FlatList
+            data={videos}
+            keyExtractor={(item) => (item.id || item.url).toString()}
+            renderItem={({ item }) => (
+              <Module
+                title={item.title}
+                handlePress={() => handleNavigate(item.url, item.title, item.description, item.media_type)}
+              />
             )}
-          </ScrollView>
+            contentContainerStyle={styles.scroll}
+            ListHeaderComponent={
+              loading ? (
+                <>
+                  <AssortedSkeleton />
+                  <AssortedSkeleton />
+                  <AssortedSkeleton />
+                  <AssortedSkeleton />
+                </>
+              ) : null
+            }
+            ListEmptyComponent={
+              !loading ? (
+                error ? (
+                  <Text style={styles.errorMessage}>Error fetching videos: {error}</Text>
+                ) : (
+                  <Text style={styles.errorMessage}>No modules available</Text>
+                )
+              ) : null
+            }
+            showsVerticalScrollIndicator={false}
+          />
         )}
       </LinearGradient>
     </View>

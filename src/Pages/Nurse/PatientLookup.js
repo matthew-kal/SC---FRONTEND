@@ -28,7 +28,7 @@ const PatientLookup = ({ navigation }) => {
     if (!searchQuery) return;
 
     setIsLoading(true);
-    setPatients([]); // Clear previous results immediately
+    setPatients([]); 
     setSearchAttempted(false);
 
     try {
@@ -43,38 +43,12 @@ const PatientLookup = ({ navigation }) => {
     }
   };
 
-  const getGraphData = async (id) => {
-    try {
-      const data = await getJSON(`/users/patient-graph/${id}/`);
-      return data.weekData || {};
-    } catch (error) {
-      console.error("Error fetching graph data:", error);
-      return {};
-    }
-  };
-  
-
-  const handleUserClick = async (user) => {
-      const weekData = await getGraphData(user.id);
-      navigation.navigate('PatientDetails', {
-
-        email: user.email,
-        username: user.username,
-        password: user.password,
-        id: user.id,
-
-        weeklyData: 
-        [{ x: 'M', y: weekData.mon || 0 },
-        { x: 'T', y: weekData.tues || 0 },
-        { x: 'W', y: weekData.wed || 0 },
-        { x: 'Th', y: weekData.thur || 0 },
-        { x: 'F', y: weekData.fri || 0 },
-        { x: 'S', y: weekData.sat || 0 },
-        { x: 'Su', y: weekData.sun || 0 }],
-
-        dailyData: [weekData.week || 0, weekData.all_time || 0]
-
-      });
+  const handleUserClick = (user) => {
+    navigation.navigate('PatientDetails', {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+    });
   };
   
 
@@ -97,8 +71,7 @@ const PatientLookup = ({ navigation }) => {
 
         <View style={[styles.buttonContainer, {width: filterWidth}]}>
           
-          
-          {/* NEW UNIFIED TEXT SEARCH BUTTON */}
+
           <TouchableOpacity
             style={[styles.switchButton, searchBy === 'text' && styles.activeButton]}
             onPress={() => handleSearchByChange('text')}
@@ -106,7 +79,6 @@ const PatientLookup = ({ navigation }) => {
             <Text style={styles.switchButtonText}>Name / Email</Text>
           </TouchableOpacity>
 
-          {/* ID SEARCH BUTTON (Unchanged) */}
           <TouchableOpacity
             style={[styles.switchButton, searchBy === 'id' && styles.activeButton]}
             onPress={() => handleSearchByChange('id')}
@@ -193,16 +165,18 @@ const styles = StyleSheet.create({
 
   },
   switchButton: {
-    borderWidth: 3,
+    borderWidth: 1,
     borderColor: '#AA336A',
     backgroundColor: 'white',
     padding: 10,
     borderRadius: 10,
     width: 100,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   activeButton: {
     backgroundColor: '#E699B6',
+    borderWidth: 3,
   },
   switchButtonText: {
     color: '#AA336A',
@@ -215,7 +189,7 @@ const styles = StyleSheet.create({
     width: 300,
   },
   searchButton: {
-    borderWidth: 3,
+    borderWidth: 1,
     borderColor: '#AA336A',
     backgroundColor: 'white',
     padding: 10,
@@ -224,7 +198,7 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     fontFamily: 'Cairo',
-    borderWidth: 3,
+    borderWidth: 1,
     borderColor: '#AA336A',
     backgroundColor: 'white',
     padding: 10,
@@ -235,7 +209,7 @@ const styles = StyleSheet.create({
   },
   patientItem: {
     borderRadius: 10,
-    borderWidth: 3,
+    borderWidth: 1,
     borderColor: '#AA336A',
     backgroundColor: 'white',
     padding: 15,

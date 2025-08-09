@@ -62,9 +62,10 @@ const Dashboard = ({ navigation }) => {
   );
 
   const handleNavigate = (item) => {
-    navigation.navigate('DashPlayer', { 
-        videoUrl: item.url, videoTitle: item.title, videoId: item.id, 
-        videoDescription: item.description, isCompleted: item.isCompleted, mediaType: item.media_type 
+    navigation.navigate('MediaPlayer', {
+      mode: 'dashboard',
+      videoUrl: item.url, videoTitle: item.title, videoId: item.id,
+      videoDescription: item.description, isCompleted: item.isCompleted, mediaType: item.media_type,
     });
   };
 
@@ -119,11 +120,14 @@ const Dashboard = ({ navigation }) => {
 
             <Text style={styles.title}>Your Journey</Text>
             {loading ? (
-              <GraphSkeleton />
+              <GraphSkeleton containerStyle={[styles.cardContainer, { width: width >= 450 ? '60%' : '90%' }]} />
             ) : (
-              <View style={[styles.graph, { width: width >= 450 ? '60%' : '90%' }]}>
-                <Graph weeklyData={weeklyData} dailyData={dailyData} key={graphKey} />
-              </View>
+              <Graph
+                containerStyle={[styles.cardContainer, { width: width >= 450 ? '60%' : '90%' }]}
+                weeklyData={weeklyData}
+                dailyData={dailyData}
+                key={graphKey}
+              />
             )}
 
             <Text style={[styles.title, { marginTop: 60 }]}>Today's Quote</Text>
@@ -144,7 +148,7 @@ const styles = StyleSheet.create({
     logo: { marginTop: 80, marginBottom: 20 },
     videoScroll: { width: '100%' },
     title: { fontFamily: 'Cairo', fontSize: 35, fontWeight: 'bold', color: 'white', textAlign: 'center', marginBottom: 10, marginTop: 30 },
-    graph: { borderRadius: 10, borderWidth: 2, borderColor: '#AA336A', backgroundColor: 'white', alignItems: 'center', alignSelf: 'center', marginVertical: 5 },
+    cardContainer: { height: 250, justifyContent: 'center', borderRadius: 10, borderWidth: 1, borderColor: '#AA336A', backgroundColor: 'white', alignItems: 'center', alignSelf: 'center', marginVertical: 5 },
     errorText: { fontSize: 18, color: 'red' },
     noDataText: { fontSize: 18, color: 'gray' },
 });

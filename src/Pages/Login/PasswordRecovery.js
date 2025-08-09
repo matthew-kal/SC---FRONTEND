@@ -8,6 +8,7 @@ const BASE_URL = 'http://192.168.1.72:80' // 'https://api.surgicalm.com'
 
 const PasswordRecovery = ({ navigation }) => {
     const [email, setEmail] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
     const [fontsLoaded] = useFonts({
         Cairo_400Regular,
         Cairo_700Bold,
@@ -25,6 +26,7 @@ const PasswordRecovery = ({ navigation }) => {
             return;
         }
 
+        setIsLoading(true);
         try {
             const response = await fetch(`${BASE_URL}/users/password-reset/`, {
                 method: 'POST',
@@ -44,6 +46,8 @@ const PasswordRecovery = ({ navigation }) => {
         } catch (error) {
             console.error(error);
             Alert.alert('Network Error', 'Unable to contact server. Please check your connection and try again.');
+        } finally {
+            setIsLoading(false);
         }
     };
 
@@ -69,7 +73,11 @@ const PasswordRecovery = ({ navigation }) => {
                         keyboardType="email-address"
                         autoCapitalize="none"
                     />
-                    <TouchableOpacity style={styles.finalLogin} onPress={handlePasswordRecovery}>
+                    <TouchableOpacity
+                        style={[styles.finalLogin, isLoading && { opacity: 0.5 }]}
+                        onPress={handlePasswordRecovery}
+                        disabled={isLoading}
+                    >
                         <Text style={styles.innerFinal}>Send Recovery Email</Text>
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.backButton} onPress={() => navigation.goBack()}>
