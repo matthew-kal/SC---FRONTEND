@@ -1,0 +1,1 @@
+REACT_NATIVE_PACKAGER_HOSTNAME=100.1.109.244 npx expo start --dev-client --clear --scheme surgicalm --tunnel

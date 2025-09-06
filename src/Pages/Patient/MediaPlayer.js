@@ -1,5 +1,5 @@
-import React, { useState, useCallback, useContext, useRef, useEffect } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, Dimensions, Alert, ActivityIndicator } from 'react-native';
+import React, { useState, useCallback, useEffect, useContext, useRef } from 'react';
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Dimensions, Alert, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -9,52 +9,49 @@ import AudioPlayer from '../../Components/AV/AudioPlayer';
 import VideoPlayer from '../../Components/AV/VideoPlayer';
 
 const MediaPlayer = ({ route, navigation }) => {
-  const {
-    videoUrl, videoTitle, videoDescription, mediaType,
-    mode, // 'dashboard' or 'library'
-    videoId,
-    isCompleted,
-  } = route.params;
+  // The videoId is now the primary parameter - no more direct videoUrl
+  const { videoId, videoTitle, videoDescription, mediaType, mode, isCompleted } = route.params;
+
+  const [signedUrl, setSignedUrl] = useState(null); // NEW: State to hold the temporary URL
+  const [isLoading, setIsLoading] = useState(true);
+  const [mediaError, setMediaError] = useState(null);
+  const [confettiVisible, setConfettiVisible] = useState(false);
 
   const { width, height } = Dimensions.get('window');
   const videoRef = useRef(null);
   const submitted = useRef(false);
-  const [confettiVisible, setConfettiVisible] = useState(false);
 
-  const [mediaLoading, setMediaLoading] = useState(true);
-  const [mediaError, setMediaError] = useState(null);
-
-  const { refresh, setRefresh } = useContext(PatientContext);
   const { getJSON } = useFetchWithAuth();
+  const { setRefresh } = useContext(PatientContext);
 
-  const validateMediaUrl = useCallback(async () => {
+  // NEW: Function to fetch the signed URL from our dedicated endpoint
+  const fetchSignedUrl = useCallback(async () => {
+    setIsLoading(true);
     setMediaError(null);
-    setMediaLoading(true);
-    if (!videoUrl || !videoUrl.startsWith('http')) {
-      setMediaError('A valid media URL was not provided.');
-      setMediaLoading(false);
-      return;
-    }
+    setSignedUrl(null);
+    
     try {
-      console.log(`[MediaPlayer] Validating URL: ${videoUrl}`);
-      const response = await fetch(videoUrl, { method: 'HEAD' });
-      if (response.ok) {
-        setMediaError(null);
-        setMediaLoading(false);
+      console.log(`[MediaPlayer] Fetching signed URL for module ${videoId}`);
+      const response = await getJSON(`/users/modules/${videoId}/signed-url/`);
+      
+      if (response.data && response.data.signedUrl) {
+        console.log(`[MediaPlayer] Successfully received signed URL for module ${videoId}`);
+        setSignedUrl(response.data.signedUrl);
       } else {
-        setMediaError('This media could not be found. It may have been moved or deleted.');
-        setMediaLoading(false);
+        throw new Error("Invalid response from server when fetching signed URL.");
       }
-    } catch (error) {
-      console.error('[MediaPlayer] Network error validating URL:', error);
-      setMediaError('A network error occurred. Please check your connection and try again.');
-      setMediaLoading(false);
+    } catch (err) {
+      console.error('[MediaPlayer] Error fetching signed URL:', err);
+      setMediaError("Could not load media. Please check your connection and try again.");
+    } finally {
+      setIsLoading(false);
     }
-  }, [videoUrl]);
+  }, [videoId, getJSON]);
 
+  // MODIFIED: useEffect now calls our new fetch function
   useEffect(() => {
-    validateMediaUrl();
-  }, [validateMediaUrl]);
+    fetchSignedUrl();
+  }, [fetchSignedUrl]);
 
   const handleComplete = useCallback(async () => {
     if (mode !== 'dashboard') return;
@@ -101,9 +98,10 @@ const MediaPlayer = ({ route, navigation }) => {
     navigation.navigate(returnScreen);
   }, [navigation, mode]);
 
+  // MODIFIED: Retry logic now re-fetches the signed URL
   const handleRetry = useCallback(() => {
-    validateMediaUrl();
-  }, [validateMediaUrl]);
+    fetchSignedUrl();
+  }, [fetchSignedUrl]);
 
   return (
     <View style={styles.container}>
@@ -122,28 +120,32 @@ const MediaPlayer = ({ route, navigation }) => {
 
         <Text style={styles.title}>{videoTitle}</Text>
 
+        {/* MODIFIED: Conditional rendering based on loading/error/success states */}
         {mediaError ? (
           <View style={styles.mediaErrorContainer}>
             <Icon name="alert-circle-outline" size={60} color="red" />
             <Text style={styles.mediaErrorText}>{mediaError}</Text>
           </View>
-        ) : mediaLoading ? (
+        ) : isLoading ? (
           <View style={styles.mediaLoadingContainer}>
             <ActivityIndicator size="large" color="white" />
-            <Text style={styles.mediaLoadingText}>Validating Media...</Text>
+            <Text style={styles.mediaLoadingText}>Loading Secure Media...</Text>
           </View>
-        ) : mediaType === 'video' ? (
-          <VideoPlayer
-            sourceUrl={videoUrl}
-            onFinish={handleComplete}
-            onPlaybackError={setMediaError}
-          />
         ) : (
-          <AudioPlayer
-            sourceUrl={videoUrl}
-            onFinish={handleComplete}
-            onPlaybackError={setMediaError}
-          />
+          // The players are only rendered once the signedUrl is successfully fetched
+          mediaType === 'video' ? (
+            <VideoPlayer
+              sourceUrl={signedUrl}
+              onFinish={handleComplete}
+              onPlaybackError={(error) => setMediaError(`Playback error: ${error}`)}
+            />
+          ) : (
+            <AudioPlayer
+              sourceUrl={signedUrl}
+              onFinish={handleComplete}
+              onPlaybackError={(error) => setMediaError(`Playback error: ${error}`)}
+            />
+          )
         )}
 
         <View style={styles.textContainer}>
@@ -157,7 +159,7 @@ const MediaPlayer = ({ route, navigation }) => {
             onPress={handleComplete}
             style={styles.button}
             accessibilityLabel="Mark module complete"
-            disabled={submitted.current || mediaLoading || mediaError}
+            disabled={submitted.current || isLoading || mediaError}
           >
             <Icon name="checkmark-outline" size={25} color="#AA336A" />
           </TouchableOpacity>
@@ -208,6 +210,4 @@ const styles = StyleSheet.create({
   mediaErrorText: { marginTop: 10, color: 'red', fontSize: 18, textAlign: 'center', paddingHorizontal: 10, fontFamily: 'Cairo' },
 });
 
-export default MediaPlaye;
-
-
+export default MediaPlayer;

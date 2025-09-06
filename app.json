@@ -1,9 +1,11 @@
 {
   "expo": {
     "name": "SurgiCalm",
-    "slug": "SC---Frontend",
+    "slug": "surgicalm",
+    "scheme": "surgicalm",
     "owner": "matthewkal",
     "version": "1.0.0",
+    "description": "SurgiCalm helps patients prepare for and recover from surgery with daily educational content and tasks.",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "splash": {
@@ -21,10 +23,7 @@
         "NSFaceIDUsageDescription": "SurgiCalm uses Face ID and Touch ID to provide secure and convenient access to your healthcare content. This ensures your medical information stays protected while allowing quick and safe login to your personalized care plan.",
         "NSAppTransportSecurity": {
           "NSExceptionDomains": {
-            "localhost": {
-              "NSExceptionAllowsInsecureHTTPLoads": true
-            },
-            "192.168.1.72": {
+            "100.1.109.244": {
               "NSExceptionAllowsInsecureHTTPLoads": true
             }
           }
@@ -38,7 +37,9 @@
       },
       "permissions": [
         "android.permission.RECORD_AUDIO",
-        "android.permission.MODIFY_AUDIO_SETTINGS"
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.USE_BIOMETRIC",
+        "android.permission.USE_FINGERPRINT"
       ],
       "package": "com.surgicalm.app"
     },
@@ -48,21 +49,21 @@
     "plugins": [
       "expo-secure-store",
       "expo-audio",
-      "expo-video", 
-      "expo-notifications", 
-      ["expo-screen-orientation", 
-      {
-        "initialOrientation": "PORTRAIT"
-      }
+      "expo-video",
+      "expo-notifications",
+      "expo-local-authentication",
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "PORTRAIT"
+        }
       ]
     ],
-    "eas": {
-      "projectId": "eb94781a-5040-4c76-8e2b-40ba048cbbdf"
-    },
-    "extra": {
+    "expo": {
       "eas": {
-        "projectId": "7ceee751-70a4-4c90-a14e-d3980d118576"
+        "projectId": "4220048f-3533-4e7b-9cd6-041deb0f3eaa"
       }
     }
+    }
   }
-}
+

@@ -4,7 +4,7 @@ import { TokenContext } from './TokenContext';
 import { CommonActions } from '@react-navigation/native';
 import { navigationRef } from '../../Navigation/NavRef';
 
-const BASE_URL = 'http://192.168.1.72:80' // 'https://api.surgicalm.com'
+const BASE_URL = 'https://api.surgicalm.com' //'http://192.168.1.72:80' 
 
 const refreshAccessToken = async (refreshToken) => {
   console.log('[refreshAccessToken] Function called.');

@@ -62,8 +62,8 @@ const AssortedModules = () => {
     }
   }, [categoryId, subcategoryId, fetchWithAuth]);
 
-  const handleNavigate = (videoUrl, videoTitle, videoDescription, mediaType) => {
-    navigation.navigate('MediaPlayer', { mode: 'library', videoUrl, videoTitle, videoDescription, mediaType });
+  const handleNavigate = (videoId, videoTitle, videoDescription, mediaType) => {
+    navigation.navigate('MediaPlayer', { mode: 'library', videoId, videoTitle, videoDescription, mediaType });
   };
 
   const handleReturn = () => {
@@ -99,7 +99,7 @@ const AssortedModules = () => {
             renderItem={({ item }) => (
               <Module
                 title={item.title}
-                handlePress={() => handleNavigate(item.url, item.title, item.description, item.media_type)}
+                handlePress={() => handleNavigate(item.id, item.title, item.description, item.media_type)}
               />
             )}
             contentContainerStyle={styles.scroll}

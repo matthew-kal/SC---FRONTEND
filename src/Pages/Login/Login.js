@@ -11,7 +11,7 @@ import { TokenContext } from '../../Components/Services/TokenContext';
 import { registerForPushNotificationsAsync } from '../../Components/Services/Notifications';
 import BiometricAuth from '../../Components/Services/BiometricAuth';
 
-const BASE_URL = 'http://192.168.1.72:80' // 'https://api.surgicalm.com'
+const BASE_URL = 'https://api.surgicalm.com' //  'http://192.168.1.72:80' //
 
 
 const LoginForm = ({ userPlaceholder, passPlaceholder, username, setUsername, password, setPassword, onSubmit, isPatient, isLoading }) => {

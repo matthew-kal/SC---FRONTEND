@@ -64,7 +64,7 @@ const Dashboard = ({ navigation }) => {
   const handleNavigate = (item) => {
     navigation.navigate('MediaPlayer', {
       mode: 'dashboard',
-      videoUrl: item.url, videoTitle: item.title, videoId: item.id,
+      videoId: item.id, videoTitle: item.title,
       videoDescription: item.description, isCompleted: item.isCompleted, mediaType: item.media_type,
     });
   };
