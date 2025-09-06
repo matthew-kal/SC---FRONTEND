@@ -24,34 +24,60 @@ const MediaPlayer = ({ route, navigation }) => {
   const { getJSON } = useFetchWithAuth();
   const { setRefresh } = useContext(PatientContext);
 
-  // NEW: Function to fetch the signed URL from our dedicated endpoint
-  const fetchSignedUrl = useCallback(async () => {
-    setIsLoading(true);
-    setMediaError(null);
-    setSignedUrl(null);
-    
-    try {
-      console.log(`[MediaPlayer] Fetching signed URL for module ${videoId}`);
-      const response = await getJSON(`/users/modules/${videoId}/signed-url/`);
-      
-      if (response.data && response.data.signedUrl) {
-        console.log(`[MediaPlayer] Successfully received signed URL for module ${videoId}`);
-        setSignedUrl(response.data.signedUrl);
-      } else {
-        throw new Error("Invalid response from server when fetching signed URL.");
-      }
-    } catch (err) {
-      console.error('[MediaPlayer] Error fetching signed URL:', err);
-      setMediaError("Could not load media. Please check your connection and try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [videoId, getJSON]);
-
-  // MODIFIED: useEffect now calls our new fetch function
+  // MODIFIED: useEffect now fetches the signed URL directly with cleanup
   useEffect(() => {
+    let isMounted = true; // Flag to track if component is still mounted
+    
+    const fetchSignedUrl = async () => {
+      if (!isMounted) return; // Early exit if component unmounted
+      
+      setIsLoading(true);
+      setMediaError(null);
+      setSignedUrl(null);
+      
+      try {
+        console.log(`[MediaPlayer] Fetching signed URL for module ${videoId}`);
+        const response = await getJSON(`/users/modules/${videoId}/signed-url/`);
+        
+        // Check if component is still mounted before updating state
+        if (!isMounted) {
+          console.log(`[MediaPlayer] Component unmounted, ignoring response for module ${videoId}`);
+          return;
+        }
+        
+        console.log(`[MediaPlayer] Response received:`, JSON.stringify(response));
+        
+        if (response && response.signedUrl) {
+          console.log(`[MediaPlayer] Successfully received signed URL for module ${videoId}`);
+          setSignedUrl(response.signedUrl);
+        } else {
+          console.error('[MediaPlayer] Invalid response structure:', response);
+          throw new Error("Invalid response from server when fetching signed URL.");
+        }
+      } catch (err) {
+        // Only update state if component is still mounted
+        if (isMounted) {
+          console.error('[MediaPlayer] Error fetching signed URL:', err);
+          setMediaError("Could not load media. Please check your connection and try again.");
+        } else {
+          console.log(`[MediaPlayer] Component unmounted, ignoring error for module ${videoId}`);
+        }
+      } finally {
+        // Only update state if component is still mounted
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
     fetchSignedUrl();
-  }, [fetchSignedUrl]);
+    
+    // Cleanup function: mark component as unmounted
+    return () => {
+      console.log(`[MediaPlayer] Component unmounting, canceling any pending operations for module ${videoId}`);
+      isMounted = false;
+    };
+  }, [videoId]); // Only run when videoId changes
 
   const handleComplete = useCallback(async () => {
     if (mode !== 'dashboard') return;
@@ -98,10 +124,54 @@ const MediaPlayer = ({ route, navigation }) => {
     navigation.navigate(returnScreen);
   }, [navigation, mode]);
 
-  // MODIFIED: Retry logic now re-fetches the signed URL
+  // MODIFIED: Retry logic now re-fetches the signed URL with mount checking
+  const isMountedRef = useRef(true);
+  
+  // Set up component unmount tracking
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+  
   const handleRetry = useCallback(() => {
-    fetchSignedUrl();
-  }, [fetchSignedUrl]);
+    if (!isMountedRef.current) return; // Don't retry if component is unmounted
+    
+    setIsLoading(true);
+    setMediaError(null);
+    setSignedUrl(null);
+    
+    const retryFetch = async () => {
+      try {
+        console.log(`[MediaPlayer] Retrying signed URL fetch for module ${videoId}`);
+        const response = await getJSON(`/users/modules/${videoId}/signed-url/`);
+        
+        // Check if component is still mounted before updating state
+        if (!isMountedRef.current) {
+          console.log(`[MediaPlayer] Component unmounted during retry, ignoring response for module ${videoId}`);
+          return;
+        }
+        
+        if (response && response.signedUrl) {
+          console.log(`[MediaPlayer] Successfully received signed URL for module ${videoId}`);
+          setSignedUrl(response.signedUrl);
+        } else {
+          throw new Error("Invalid response from server when fetching signed URL.");
+        }
+      } catch (err) {
+        if (isMountedRef.current) {
+          console.error('[MediaPlayer] Error fetching signed URL:', err);
+          setMediaError("Could not load media. Please check your connection and try again.");
+        }
+      } finally {
+        if (isMountedRef.current) {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    retryFetch();
+  }, [videoId, getJSON]);
 
   return (
     <View style={styles.container}>

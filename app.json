@@ -13,6 +13,7 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
+    
     "ios": {
       "supportsTablet": true,
       "requireFullScreen": true,
@@ -30,6 +31,7 @@
         }
       }
     },
+
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
@@ -43,9 +45,11 @@
       ],
       "package": "com.surgicalm.app"
     },
+
     "web": {
       "favicon": "./assets/favicon.png"
     },
+
     "plugins": [
       "expo-secure-store",
       "expo-audio",
@@ -59,11 +63,13 @@
         }
       ]
     ],
-    "expo": {
+
+   "extra": {
       "eas": {
         "projectId": "4220048f-3533-4e7b-9cd6-041deb0f3eaa"
       }
     }
-    }
+    
   }
+}
 

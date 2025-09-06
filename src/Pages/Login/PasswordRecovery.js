@@ -4,7 +4,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import CustomInput from '../../Components/Cards/CustomInput';
 import { useFonts, Cairo_400Regular, Cairo_700Bold } from '@expo-google-fonts/cairo';
 
-const BASE_URL ='https://api.surgicalm.com' // 'http://192.168.1.72:80'
+const BASE_URL = 'https://api.surgicalm.com' // 'http://192.168.1.72:80'
 
 const PasswordRecovery = ({ navigation }) => {
     const [email, setEmail] = useState('');

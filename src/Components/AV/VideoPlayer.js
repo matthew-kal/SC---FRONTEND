@@ -1,7 +1,7 @@
 // In Components/VideoPlayer.js
 import React from 'react';
 import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
-import { Video } from 'expo-video';
+import { VideoView } from 'expo-video';
 import Icon from 'react-native-vector-icons/Ionicons';
 
 const VideoPlayer = ({ sourceUrl, onFinish, onPlaybackError }) => {
@@ -27,12 +27,12 @@ const VideoPlayer = ({ sourceUrl, onFinish, onPlaybackError }) => {
           <ActivityIndicator size="large" color="#FFFFFF" />
         </View>
       )}
-      <Video
+      <VideoView
         ref={videoRef}
         source={{ uri: sourceUrl }}
         style={styles.video}
         useNativeControls
-        resizeMode="contain"
+        contentFit="contain"
         shouldPlay
         onPlaybackStatusUpdate={handleStatusUpdate}
         onError={(err) => onPlaybackError(err.error)}
