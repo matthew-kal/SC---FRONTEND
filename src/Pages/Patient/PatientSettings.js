@@ -260,7 +260,7 @@ const PatientSettings = () => {
       </View>
     </Modal>
   )}
-  <PrivacyPolicy style={width >= 450 ? { marginBottom: 200 } : { marginBottom: 0 }} />
+  <PrivacyPolicy style={{marginBottom: 200 }} />
       </ScrollView>
       </LinearGradient>
     </View>

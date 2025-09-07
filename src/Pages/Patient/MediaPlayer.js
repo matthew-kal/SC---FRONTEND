@@ -3,6 +3,7 @@ import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Dimensions, Alert
 import { LinearGradient } from 'expo-linear-gradient';
 import ConfettiCannon from 'react-native-confetti-cannon';
 import Icon from 'react-native-vector-icons/Ionicons';
+import { useFocusEffect } from '@react-navigation/native';
 import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
 import { PatientContext } from '../../Components/Services/PatientContext';
 import AudioPlayer from '../../Components/AV/AudioPlayer';
@@ -18,6 +19,7 @@ const MediaPlayer = ({ route, navigation }) => {
 
   const { width, height } = Dimensions.get('window');
   const videoRef = useRef(null);
+  const audioRef = useRef(null);
   const submitted = useRef(false);
 
   const { getJSON } = useFetchWithAuth();
@@ -25,6 +27,7 @@ const MediaPlayer = ({ route, navigation }) => {
 
   useEffect(() => {
     let isMounted = true; 
+    console.log(videoId, videoTitle, videoDescription, mediaType, mode, isCompleted)
     
     const fetchSignedUrl = async () => {
       if (!isMounted) return; 
@@ -116,11 +119,20 @@ const MediaPlayer = ({ route, navigation }) => {
   }, [getJSON, videoId, navigation, setRefresh, isCompleted, mediaError, mode]);
 
   const returnHome = useCallback(async () => {
+    // Pause video if it exists
     if (videoRef.current) {
       try {
         videoRef.current.pause();
       } catch {}
     }
+    
+    // Pause audio if it exists
+    if (audioRef.current && audioRef.current.pause) {
+      try {
+        audioRef.current.pause();
+      } catch {}
+    }
+    
     const returnScreen = mode === 'dashboard' ? 'Dashboard' : 'AssortedCategories';
     navigation.navigate(returnScreen);
   }, [navigation, mode]);
@@ -128,18 +140,48 @@ const MediaPlayer = ({ route, navigation }) => {
   // MODIFIED: Retry logic now re-fetches the signed URL with mount checking
   const isMountedRef = useRef(true);
   
-  // Set up component unmount tracking and video cleanup
+  // Set up component unmount tracking and media cleanup
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      
       // Pause video when component unmounts
       if (videoRef.current) {
         try {
           videoRef.current.pause();
         } catch {}
       }
+      
+      // Pause audio when component unmounts
+      if (audioRef.current && audioRef.current.pause) {
+        try {
+          audioRef.current.pause();
+        } catch {}
+      }
     };
   }, []);
+
+  // Handle navigation focus/blur events to pause/resume media
+  useFocusEffect(
+    useCallback(() => {
+      // Component gained focus - no action needed, let user manually play
+      
+      return () => {
+        // Component lost focus - pause all media
+        if (videoRef.current) {
+          try {
+            videoRef.current.pause();
+          } catch {}
+        }
+        
+        if (audioRef.current && audioRef.current.pause) {
+          try {
+            audioRef.current.pause();
+          } catch {}
+        }
+      };
+    }, [])
+  );
   
   const handleRetry = useCallback(() => {
     if (!isMountedRef.current) return; // Don't retry if component is unmounted
@@ -219,6 +261,7 @@ const MediaPlayer = ({ route, navigation }) => {
             />
           ) : (
             <AudioPlayer
+              ref={audioRef}
               sourceUrl={signedUrl}
               onFinish={handleComplete}
               onPlaybackError={(error) => setMediaError(`Playback error: ${error}`)}

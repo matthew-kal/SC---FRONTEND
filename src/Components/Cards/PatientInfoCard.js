@@ -25,6 +25,7 @@ const styles = StyleSheet.create({
     fontFamily: 'Cairo',
     lineHeight: 25,
     fontSize: 16,
+    textAlign: 'center',
   },
   bold: {
     fontWeight: 'bold',
