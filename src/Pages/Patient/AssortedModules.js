@@ -30,7 +30,7 @@ const AssortedModules = () => {
       setLoading(true);
       fetchModules();
       setLoading(false);
-    }, [fetchModules])
+    }, [fetchModules, categoryId, subcategoryId])
   );
 
   const fetchModules = useCallback(async () => {

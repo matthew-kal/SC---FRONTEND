@@ -9,10 +9,9 @@ import AudioPlayer from '../../Components/AV/AudioPlayer';
 import VideoPlayer from '../../Components/AV/VideoPlayer';
 
 const MediaPlayer = ({ route, navigation }) => {
-  // The videoId is now the primary parameter - no more direct videoUrl
   const { videoId, videoTitle, videoDescription, mediaType, mode, isCompleted } = route.params;
 
-  const [signedUrl, setSignedUrl] = useState(null); // NEW: State to hold the temporary URL
+  const [signedUrl, setSignedUrl] = useState(null); 
   const [isLoading, setIsLoading] = useState(true);
   const [mediaError, setMediaError] = useState(null);
   const [confettiVisible, setConfettiVisible] = useState(false);
@@ -24,32 +23,39 @@ const MediaPlayer = ({ route, navigation }) => {
   const { getJSON } = useFetchWithAuth();
   const { setRefresh } = useContext(PatientContext);
 
-  // MODIFIED: useEffect now fetches the signed URL directly with cleanup
   useEffect(() => {
-    let isMounted = true; // Flag to track if component is still mounted
+    let isMounted = true; 
     
     const fetchSignedUrl = async () => {
-      if (!isMounted) return; // Early exit if component unmounted
+      if (!isMounted) return; 
+      
+      const startTime = performance.now();
+      console.log(`[MediaPlayer] Starting signed URL fetch for module ${videoId} at ${startTime}`);
       
       setIsLoading(true);
       setMediaError(null);
       setSignedUrl(null);
       
       try {
+        const fetchStart = performance.now();
         console.log(`[MediaPlayer] Fetching signed URL for module ${videoId}`);
         const response = await getJSON(`/users/modules/${videoId}/signed-url/`);
+        const fetchEnd = performance.now();
+        console.log(`[MediaPlayer] ⏱️ URL fetch took ${fetchEnd - fetchStart}ms`);
         
-        // Check if component is still mounted before updating state
         if (!isMounted) {
           console.log(`[MediaPlayer] Component unmounted, ignoring response for module ${videoId}`);
           return;
         }
         
-        console.log(`[MediaPlayer] Response received:`, JSON.stringify(response));
-        
         if (response && response.signedUrl) {
-          console.log(`[MediaPlayer] Successfully received signed URL for module ${videoId}`);
+          const urlSetTime = performance.now();
+          console.log(`[MediaPlayer] ✅ Successfully received signed URL for module ${videoId} (total: ${urlSetTime - startTime}ms)`);
           setSignedUrl(response.signedUrl);
+          
+          // Immediately set loading to false to start video loading
+          // The VideoPlayer will handle its own loading state with skeleton
+          setIsLoading(false);
         } else {
           console.error('[MediaPlayer] Invalid response structure:', response);
           throw new Error("Invalid response from server when fetching signed URL.");
@@ -63,8 +69,8 @@ const MediaPlayer = ({ route, navigation }) => {
           console.log(`[MediaPlayer] Component unmounted, ignoring error for module ${videoId}`);
         }
       } finally {
-        // Only update state if component is still mounted
-        if (isMounted) {
+        // Only update loading if there was an error
+        if (isMounted && !signedUrl) {
           setIsLoading(false);
         }
       }
@@ -92,23 +98,19 @@ const MediaPlayer = ({ route, navigation }) => {
         body: JSON.stringify({ isCompleted: true }),
       });
       console.log('[MediaPlayer] Completion update response:', response);
-      if (response.status === 200) {
-        setConfettiVisible(true);
-        setRefresh(true);
-        setTimeout(() => {
-          setConfettiVisible(false);
-          submitted.current = false;
-          navigation.navigate('Dashboard');
-        }, 3000);
-      } else {
-        const errorDetails = await response.json();
-        console.error('[MediaPlayer] Backend error:', errorDetails);
-        Alert.alert('Completion Failed', `Backend error: ${errorDetails?.detail || 'Unknown error'}. Please try again.`);
+      
+      // getJSON returns parsed data directly, not a Response object
+      // If we get here, the request was successful (getJSON throws on error)
+      setConfettiVisible(true);
+      setRefresh(true);
+      setTimeout(() => {
+        setConfettiVisible(false);
         submitted.current = false;
-      }
+        navigation.navigate('Dashboard');
+      }, 3000);
     } catch (err) {
       console.error('[MediaPlayer] Completion error:', err);
-      Alert.alert('Completion Failed', 'A network error occurred. Please check your connection and try again.');
+      Alert.alert('Completion Failed', `Error: ${err.message || 'A network error occurred. Please check your connection and try again.'}`);
       submitted.current = false;
     }
   }, [getJSON, videoId, navigation, setRefresh, isCompleted, mediaError, mode]);
@@ -116,8 +118,7 @@ const MediaPlayer = ({ route, navigation }) => {
   const returnHome = useCallback(async () => {
     if (videoRef.current) {
       try {
-        await videoRef.current.pauseAsync();
-        await videoRef.current.unloadAsync();
+        videoRef.current.pause();
       } catch {}
     }
     const returnScreen = mode === 'dashboard' ? 'Dashboard' : 'AssortedCategories';
@@ -127,10 +128,16 @@ const MediaPlayer = ({ route, navigation }) => {
   // MODIFIED: Retry logic now re-fetches the signed URL with mount checking
   const isMountedRef = useRef(true);
   
-  // Set up component unmount tracking
+  // Set up component unmount tracking and video cleanup
   useEffect(() => {
     return () => {
       isMountedRef.current = false;
+      // Pause video when component unmounts
+      if (videoRef.current) {
+        try {
+          videoRef.current.pause();
+        } catch {}
+      }
     };
   }, []);
   
@@ -205,6 +212,7 @@ const MediaPlayer = ({ route, navigation }) => {
           // The players are only rendered once the signedUrl is successfully fetched
           mediaType === 'video' ? (
             <VideoPlayer
+              ref={videoRef}
               sourceUrl={signedUrl}
               onFinish={handleComplete}
               onPlaybackError={(error) => setMediaError(`Playback error: ${error}`)}

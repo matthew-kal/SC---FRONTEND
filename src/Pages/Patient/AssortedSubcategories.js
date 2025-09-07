@@ -30,7 +30,7 @@ const AssortedSubcategories = () => {
   useFocusEffect(
     useCallback(() => {
       fetchSubcategories();
-    }, [fetchSubcategories])
+    }, [fetchSubcategories, categoryId])
   );
 
   const fetchSubcategories = useCallback(async () => {

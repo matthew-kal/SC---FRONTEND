@@ -29,7 +29,7 @@ const refreshAccessToken = async (refreshToken) => {
     }
     const data = await response.json();
     console.log('[refreshAccessToken] Refresh token response data received.');
-    return data; // Return full response to access both access and refresh tokens
+    return data; 
   } catch (err) {
     console.error('[FetchWithAuth] Refresh token request failed:', err);
     return null;
@@ -57,13 +57,11 @@ const rawFetch = (endpoint, token, options = {}) => {
 
 export const useFetchWithAuth = () => {
   const { userType, setUserType } = useContext(TokenContext);
-  // Removed noisy log - only log during actual API calls
 
   const fetchWithAuth = async (endpoint, options = {}) => {
     console.log(`[fetchWithAuth] API call initiated for endpoint: ${endpoint}`);
     console.log(`[fetchWithAuth] Options provided: ${JSON.stringify(options)}`);
     
-    // Determine token storage keys based on userType
     const accessKey = userType === 'nurse' ? 'accessNurse' : 'accessPatient';
     const refreshKey = userType === 'nurse' ? 'refreshNurse' : 'refreshPatient';
     console.log(`[fetchWithAuth] Using accessKey: ${accessKey}, refreshKey: ${refreshKey}`);
@@ -73,7 +71,6 @@ export const useFetchWithAuth = () => {
     console.log(`[fetchWithAuth] Retrieved accessToken: ${accessToken ? 'YES' : 'NO (null/undefined)'}`);
     console.log(`[fetchWithAuth] Retrieved refreshToken: ${refreshToken ? 'YES' : 'NO (null/undefined)'}`);
 
-    // No tokens → force logout
     if (!accessToken || !refreshToken) {
       console.warn('[fetchWithAuth] No authentication tokens found. Forcing logout.');
       await clearTokens();
@@ -106,9 +103,7 @@ export const useFetchWithAuth = () => {
         throw new Error('Session expired.');
       }
       console.log('[fetchWithAuth] Access token refreshed successfully. Retrying original request.');
-      // Persist refreshed access token under correct key
       await saveSecureItem(accessKey, tokenData.access);
-      // Save new refresh token if provided (token rotation)
       if (tokenData.refresh) {
         await saveSecureItem(refreshKey, tokenData.refresh);
         console.log('[fetchWithAuth] Updated refresh token due to rotation');
@@ -127,7 +122,7 @@ export const useFetchWithAuth = () => {
     console.log(`[getJSON] fetchWithAuth returned. Response status: ${res.status}, ok: ${res.ok}`);
 
     const data = await res.json();
-    console.log(`[getJSON] Parsed JSON data (first 200 chars): ${JSON.stringify(data).substring(0,200)}...`);
+    console.log(`[getJSON] Parsed JSON data (first 5000 chars): ${JSON.stringify(data).substring(0,5000)}...`);
 
     if (!res.ok) {
       console.error(`[getJSON] Request failed. Status: ${res.status}. Details:`, data);
