@@ -1,20 +1,57 @@
-import { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions, RefreshControl, FlatList } from 'react-native';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator, Dimensions, RefreshControl, FlatList, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import Icon from 'react-native-vector-icons/Ionicons';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
 import AssortedSkeleton from '../../Components/Skeletons/AssortedSkeleton';
 import CacheManager from '../../Components/Services/CacheManager';
 
-const Category = ({ text, handlePress, icon }) => (
-  <TouchableOpacity style={styles.buttonContainer} onPress={handlePress}>
-    <View style={styles.button}>
-      <Text style={styles.title}>{text}</Text>
-      <Icon name={icon} style={{ marginTop: 10 }} size={25} color="#AA336A" />
-    </View>
-  </TouchableOpacity>
-);
+const Category = ({ text, handlePress, icon, animatedValue, delay = 0 }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [animatedValue, delay]);
+
+  return (
+    <Animated.View 
+      style={[
+        styles.buttonContainer,
+        {
+          opacity: animatedValue,
+          transform: [
+            {
+              translateY: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [20, 0],
+              }),
+            },
+            {
+              scale: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.95, 1],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <TouchableOpacity onPress={handlePress}>
+        <View style={styles.button}>
+          <Text style={styles.title}>{text}</Text>
+          <Icon name={icon} style={{ marginTop: 10 }} size={25} color="#AA336A" />
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
+  );
+};
 
 const AssortedCategories = () => {
   const navigation = useNavigation();
@@ -24,10 +61,47 @@ const AssortedCategories = () => {
   const [error, setError] = useState(null);
   const {width} = Dimensions.get("window") 
   const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Animation refs for each category item
+  const animatedValues = useRef([]);
+  const headerOpacity = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    fetchCategories();
-  }, []);
+  // Use useFocusEffect to ensure clean state transitions
+  useFocusEffect(
+    useCallback(() => {
+      // Reset loading state when screen comes into focus
+      setLoading(true);
+      setError(null);
+      setIsRefreshing(false);
+      
+      // Reset all animations
+      headerOpacity.setValue(0);
+      animatedValues.current = [];
+      
+      // Animate header in
+      Animated.timing(headerOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }).start();
+      
+      // Fetch categories data
+      fetchCategories();
+      
+      // Cleanup function: clear state when leaving the screen
+      return () => {
+        console.log('[AssortedCategories] Screen losing focus, clearing state for clean transitions');
+        setCategories([]);
+        setLoading(true);
+        setError(null);
+        setIsRefreshing(false);
+        
+        // Reset animations for next visit
+        headerOpacity.setValue(0);
+        animatedValues.current.forEach(animValue => animValue.setValue(0));
+      };
+    }, [fetchCategories, headerOpacity])
+  );
 
   const onRefresh = useCallback(async () => {
     console.log('[Refresh] User initiated pull-to-refresh.');
@@ -51,6 +125,8 @@ const AssortedCategories = () => {
       const cachedData = await CacheManager.get(cacheKey);
       if (cachedData) {
         setCategories(cachedData);
+        // Initialize animations for cached data
+        initializeAnimations(cachedData.length);
       } else {
         const res = await fetchWithAuth('/users/categories/');
         if (!res.ok) throw new Error(await res.text() || 'Failed to fetch categories');
@@ -60,6 +136,8 @@ const AssortedCategories = () => {
         }));
         setCategories(freshData);
         await CacheManager.set(cacheKey, freshData);
+        // Initialize animations for fresh data
+        initializeAnimations(freshData.length);
       }
     } catch (err) {
       setError(err.message);
@@ -69,6 +147,11 @@ const AssortedCategories = () => {
     }
   }, [fetchWithAuth]);
 
+  // Initialize animation values for each category
+  const initializeAnimations = useCallback((count) => {
+    animatedValues.current = Array(count).fill(0).map(() => new Animated.Value(0));
+  }, []);
+
   return (
     <View style={styles.container}>
       <LinearGradient
@@ -77,14 +160,34 @@ const AssortedCategories = () => {
         start={[0, 0]}
         end={[1, 1]}
       >
-        <Text style={[styles.header, {marginTop: width > 450 ? 110 : 75}]}>General Modules</Text>
+        <Animated.Text 
+          style={[
+            styles.header, 
+            {
+              marginTop: width > 450 ? 110 : 75,
+              opacity: headerOpacity,
+              transform: [
+                {
+                  translateY: headerOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0],
+                  }),
+                },
+              ],
+            }
+          ]}
+        >
+          General Modules
+        </Animated.Text>
         <FlatList
           data={categories}
           keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <Category
               text={item.name}
               icon={item.icon}
+              animatedValue={animatedValues.current[index] || new Animated.Value(0)}
+              delay={index * 100} // Stagger animations by 100ms
               handlePress={() => navigation.navigate('AssortedSubcategories', { categoryName: item.name, categoryId: item.id })}
             />
           )}
@@ -99,10 +202,16 @@ const AssortedCategories = () => {
           ListHeaderComponent={
             loading && categories.length === 0 ? (
               <>
-                <AssortedSkeleton showIcon={true} />
-                <AssortedSkeleton showIcon={true} />
-                <AssortedSkeleton showIcon={true} />
-                <AssortedSkeleton showIcon={true} />
+                <AssortedSkeleton showIcon={true} delay={0} />
+                <AssortedSkeleton showIcon={true} delay={100} />
+                <AssortedSkeleton showIcon={true} delay={200} />
+                <AssortedSkeleton showIcon={true} delay={300} />
+                <AssortedSkeleton showIcon={true} delay={400} />
+                <AssortedSkeleton showIcon={true} delay={500} />  
+                <AssortedSkeleton showIcon={true} delay={600} />
+                <AssortedSkeleton showIcon={true} delay={700} />
+                <AssortedSkeleton showIcon={true} delay={800} />
+                <AssortedSkeleton showIcon={true} delay={900} />
               </>
             ) : null
           }

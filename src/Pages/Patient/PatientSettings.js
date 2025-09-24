@@ -165,9 +165,9 @@ const PatientSettings = () => {
 
       {loading 
       ? (
-        <PatientDetailsSkeleton containerStyle={[styles.cardContainer, { width: width < 450 ? '90%' : '50%' }]} />
+        <PatientDetailsSkeleton containerStyle={[styles.cardContainer, { width: '90%' }]} />
       ) : (
-        <PatientInfoCard containerStyle={[styles.cardContainer, { width: width < 450 ? '90%' : '50%' }]} username={username} email={email} id={id} />
+        <PatientInfoCard containerStyle={[styles.cardContainer, { width: '90%' }]} username={username} email={email} id={id} />
       )}
 
       <Text style={styles.title}>Change Password</Text>
@@ -259,8 +259,7 @@ const PatientSettings = () => {
         </View>
       </View>
     </Modal>
-  )}
-  <PrivacyPolicy style={{marginBottom: 200 }} />
+  )} 
       </ScrollView>
       </LinearGradient>
     </View>

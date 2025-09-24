@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions } from 'react-native';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, FlatList, Dimensions, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/Ionicons';
@@ -7,13 +7,48 @@ import { useFetchWithAuth } from '../../Components/Services/FetchWithAuth';
 import AssortedSkeleton from '../../Components/Skeletons/AssortedSkeleton';
 import CacheManager from '../../Components/Services/CacheManager';
 
-const SubCategory = ({ text, handlePress }) => {
+const SubCategory = ({ text, handlePress, animatedValue, delay = 0 }) => {
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      Animated.timing(animatedValue, {
+        toValue: 1,
+        duration: 600,
+        useNativeDriver: true,
+      }).start();
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [animatedValue, delay]);
+
   return (
-    <TouchableOpacity style={styles.buttonContainer} onPress={handlePress}>
-      <View style={styles.button}>
-        <Text style={styles.title}>{text}</Text>
-      </View>
-    </TouchableOpacity>
+    <Animated.View 
+      style={[
+        styles.buttonContainer,
+        {
+          opacity: animatedValue,
+          transform: [
+            {
+              translateY: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [20, 0],
+              }),
+            },
+            {
+              scale: animatedValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.95, 1],
+              }),
+            },
+          ],
+        },
+      ]}
+    >
+      <TouchableOpacity onPress={handlePress}>
+        <View style={styles.button}>
+          <Text style={styles.title}>{text}</Text>
+        </View>
+      </TouchableOpacity>
+    </Animated.View>
   );
 };
 
@@ -26,11 +61,54 @@ const AssortedSubcategories = () => {
   const { categoryName, categoryId } = route.params;
   const { width } = Dimensions.get("window");
   const { fetchWithAuth } = useFetchWithAuth();
+  
+  // Animation refs
+  const animatedValues = useRef([]);
+  const headerOpacity = useRef(new Animated.Value(0)).current;
+  const backButtonOpacity = useRef(new Animated.Value(0)).current;
 
+  // Use useFocusEffect to ensure clean state transitions
   useFocusEffect(
     useCallback(() => {
+      // Reset loading state when screen comes into focus
+      setLoading(true);
+      setError('');
+      
+      // Reset all animations
+      headerOpacity.setValue(0);
+      backButtonOpacity.setValue(0);
+      animatedValues.current = [];
+      
+      // Animate header and back button in
+      Animated.parallel([
+        Animated.timing(headerOpacity, {
+          toValue: 1,
+          duration: 800,
+          useNativeDriver: true,
+        }),
+        Animated.timing(backButtonOpacity, {
+          toValue: 1,
+          duration: 600,
+          useNativeDriver: true,
+        }),
+      ]).start();
+      
+      // Fetch subcategories data
       fetchSubcategories();
-    }, [fetchSubcategories, categoryId])
+      
+      // Cleanup function: clear state when leaving the screen
+      return () => {
+        console.log('[AssortedSubcategories] Screen losing focus, clearing state for clean transitions');
+        setSubcategories([]);
+        setLoading(true);
+        setError('');
+        
+        // Reset animations for next visit
+        headerOpacity.setValue(0);
+        backButtonOpacity.setValue(0);
+        animatedValues.current.forEach(animValue => animValue.setValue(0));
+      };
+    }, [fetchSubcategories, categoryId, headerOpacity, backButtonOpacity])
   );
 
   const fetchSubcategories = useCallback(async () => {
@@ -46,6 +124,8 @@ const AssortedSubcategories = () => {
       const cachedData = await CacheManager.get(cacheKey);
       if (cachedData) {
         setSubcategories(cachedData);
+        // Initialize animations for cached data
+        initializeAnimations(cachedData.length);
       } else {
         const res = await fetchWithAuth(`/users/${categoryId}/subcategories/`);
         if (!res.ok) throw new Error(await res.text() || 'Failed to fetch subcategories');
@@ -55,6 +135,8 @@ const AssortedSubcategories = () => {
         }));
         setSubcategories(freshData);
         await CacheManager.set(cacheKey, freshData);
+        // Initialize animations for fresh data
+        initializeAnimations(freshData.length);
       }
     } catch (err) {
       setError(err.message);
@@ -64,13 +146,16 @@ const AssortedSubcategories = () => {
     }
   }, [categoryId, fetchWithAuth]);
 
+  // Initialize animation values for each subcategory
+  const initializeAnimations = useCallback((count) => {
+    animatedValues.current = Array(count).fill(0).map(() => new Animated.Value(0));
+  }, []);
+
   const handleSubcategoryPress = (subcategoryId, subcategory) => {
-    // Don't bother setting loading since navigation will unmount
     navigation.navigate('AssortedModules', { categoryId, subcategoryId, subcategory });
   };
 
   const handleReturn = () => {
-    // Don't bother setting loading since navigation will unmount
     navigation.navigate('AssortedCategories');
   };
 
@@ -80,20 +165,40 @@ const AssortedSubcategories = () => {
     <View style={styles.container}>
       <LinearGradient colors={['#AA336A', '#FFFFFF']} style={styles.gradient} start={[0, 0]} end={[1, 1]}>
         <View style={[styles.top, {marginTop: width > 450 ? 50 : 75}]}>
-          <TouchableOpacity onPress={handleReturn} style={styles.backbutton}>
-            <Icon name={"return-up-back-outline"} style={styles.icon} size={27} color="#AA336A" />
-          </TouchableOpacity>
-
+          <Animated.View style={{ opacity: backButtonOpacity }}>
+            <TouchableOpacity onPress={handleReturn} style={styles.backbutton}>
+              <Icon name={"return-up-back-outline"} style={styles.icon} size={27} color="#AA336A" />
+            </TouchableOpacity>
+          </Animated.View>
         </View>
 
-        <Text style={[styles.header]}>{categoryName}</Text>
+        <Animated.Text 
+          style={[
+            styles.header,
+            {
+              opacity: headerOpacity,
+              transform: [
+                {
+                  translateY: headerOpacity.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [-20, 0],
+                  }),
+                },
+              ],
+            }
+          ]}
+        >
+          {categoryName}
+        </Animated.Text>
 
         <FlatList
           data={subcategories}
           keyExtractor={(item) => item.subcategoryId.toString()}
-          renderItem={({ item }) => (
+          renderItem={({ item, index }) => (
             <SubCategory
               text={item.name}
+              animatedValue={animatedValues.current[index] || new Animated.Value(0)}
+              delay={index * 100} // Stagger animations by 100ms
               handlePress={() => handleSubcategoryPress(item.subcategoryId, item.name)}
             />
           )}
@@ -101,10 +206,10 @@ const AssortedSubcategories = () => {
           ListHeaderComponent={
             loading && (
               <>
-                <AssortedSkeleton />
-                <AssortedSkeleton />
-                <AssortedSkeleton />
-                <AssortedSkeleton />
+                <AssortedSkeleton delay={0} />
+                <AssortedSkeleton delay={100} />
+                <AssortedSkeleton delay={200} />
+                <AssortedSkeleton delay={300} />
               </>
             )
           }

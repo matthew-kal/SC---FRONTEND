@@ -1,24 +1,55 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, StyleSheet, Animated } from 'react-native';
 import ShimmerPlaceHolder from 'react-native-shimmer-placeholder';
 import { LinearGradient } from 'expo-linear-gradient';
 
-const AssortedSkeleton = ({ showIcon = false }) => (
-  <View style={styles.buttonContainer}>
-    <View style={styles.button}>
-      <ShimmerPlaceHolder
-        LinearGradient={LinearGradient}
-        style={styles.textPlaceholder}
-      />
-      {showIcon && (
+const AssortedSkeleton = ({ showIcon = false, delay = 0, fadeOut = false }) => {
+  const fadeAnim = useRef(new Animated.Value(1)).current;
+
+  useEffect(() => {
+    if (fadeOut) {
+      // Fade out when content is ready
+      const timer = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: true,
+        }).start();
+      }, delay);
+      
+      return () => clearTimeout(timer);
+    } else {
+      // Fade in when appearing
+      fadeAnim.setValue(0);
+      const timer = setTimeout(() => {
+        Animated.timing(fadeAnim, {
+          toValue: 1,
+          duration: 400,
+          useNativeDriver: true,
+        }).start();
+      }, delay);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [fadeOut, delay, fadeAnim]);
+
+  return (
+    <Animated.View style={[styles.buttonContainer, { opacity: fadeAnim }]}>
+      <View style={styles.button}>
         <ShimmerPlaceHolder
           LinearGradient={LinearGradient}
-          style={styles.iconPlaceholder}
+          style={styles.textPlaceholder}
         />
-      )}
-    </View>
-  </View>
-);
+        {showIcon && (
+          <ShimmerPlaceHolder
+            LinearGradient={LinearGradient}
+            style={styles.iconPlaceholder}
+          />
+        )}
+      </View>
+    </Animated.View>
+  );
+};
 
 const styles = StyleSheet.create({
   buttonContainer: {

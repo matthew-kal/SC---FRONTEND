@@ -165,9 +165,12 @@ const MediaPlayer = ({ route, navigation }) => {
   useFocusEffect(
     useCallback(() => {
       // Component gained focus - no action needed, let user manually play
+      console.log(`[MediaPlayer] Component gained focus for module ${videoId}`);
       
       return () => {
-        // Component lost focus - pause all media
+        // Component lost focus - pause all media and clean up state
+        console.log(`[MediaPlayer] Component losing focus for module ${videoId}, cleaning up`);
+        
         if (videoRef.current) {
           try {
             videoRef.current.pause();
@@ -179,8 +182,15 @@ const MediaPlayer = ({ route, navigation }) => {
             audioRef.current.pause();
           } catch {}
         }
+        
+        // Reset component state for clean transitions
+        setIsLoading(true);
+        setMediaError(null);
+        setSignedUrl(null);
+        setConfettiVisible(false);
+        submitted.current = false;
       };
-    }, [])
+    }, [videoId])
   );
   
   const handleRetry = useCallback(() => {

@@ -20,7 +20,6 @@ const NurseSettings = () => {
       >
         <Text style={styles.title}>Settings</Text>
         <Logout/>
-        <PrivacyPolicy/> 
       </LinearGradient>
     </View>
   );

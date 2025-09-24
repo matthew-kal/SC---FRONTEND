@@ -3,8 +3,7 @@ import { getSecureItem, clearTokens, saveSecureItem } from './Memory';
 import { TokenContext } from './TokenContext';
 import { CommonActions } from '@react-navigation/native';
 import { navigationRef } from '../../Navigation/NavRef';
-
-const BASE_URL = 'https://api.surgicalm.com' //'http://192.168.1.72:80' 
+import { BASE_URL } from './apiConfig'; 
 
 const refreshAccessToken = async (refreshToken) => {
   console.log('[refreshAccessToken] Function called.');
