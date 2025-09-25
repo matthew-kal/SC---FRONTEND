@@ -12,6 +12,7 @@ const Logout = () => {
   const navigation = useNavigation();
   const { userType, setUserType } = useContext(TokenContext);
   const { fetchWithAuth } = useFetchWithAuth();
+  const color = userType === 'nurse' ? 'white' : '#AA336A';
 
   const handleLogout = async () => {
     const refreshKey = userType === 'nurse' ? 'refreshNurse' : 'refreshPatient';
@@ -37,7 +38,7 @@ const Logout = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Logout</Text>
+      <Text style={[styles.title, { color: color }]}>Logout</Text>
       <TouchableOpacity style={styles.logout} onPress={handleLogout}>
         <Icon name="log-out-outline" size={25} color="#AA336A" style={styles.icon} />
       </TouchableOpacity>
@@ -51,10 +52,8 @@ const styles = StyleSheet.create({
   },
   title: {
     fontFamily: 'Cairo',
-    fontSize: 30,
-    fontWeight: 'bold',
-    color: 'white',
-    marginTop: 50,
+    fontSize: 25,
+    marginTop: 10,
     marginBottom: 20,
     alignSelf: 'center',
   },

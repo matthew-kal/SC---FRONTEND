@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Dimensions } from 'react-native';
 import { VictoryBar, VictoryChart, VictoryAxis, VictoryLabel } from 'victory-native'; 
 
 const Graph = ({ weeklyData, dailyData, containerStyle }) => {
+  const { width } = Dimensions.get('window');
   return (
     <View style={[styles.container, containerStyle]}>
-      <View style={styles.sup}>
+      <View style={[styles.sup, { marginLeft: width > 450 ? 90 : 15 }]}>
         <View style={styles.supInner}>
           <Text style={styles.supText}> 
             <Text style={styles.supBig}>{dailyData?.[0] || 0}</Text>   Weekly

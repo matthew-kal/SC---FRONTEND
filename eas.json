@@ -14,7 +14,7 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "API_URL": "https://api.surgicalm.com"
+        "API_URL": "http://localhost:8000" 
       }
     }
   },

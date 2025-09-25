@@ -1,5 +1,5 @@
-import React, { useEffect, useState, useCallback, useContext } from 'react';
-import { View, Text, StyleSheet, ScrollView, Image, Dimensions } from 'react-native';
+import React, { useEffect, useState, useCallback, useContext, useRef } from 'react';
+import { View, Text, StyleSheet, ScrollView, Image, Dimensions, Animated } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect } from '@react-navigation/native';
 import Graph from '../../Components/Cards/Graph.js';
@@ -25,6 +25,21 @@ const Dashboard = ({ navigation }) => {
   const { width } = Dimensions.get("window");
   const { getJSON, fetchWithAuth } = useFetchWithAuth();
   
+  // Animation references
+  const logoOpacity = useRef(new Animated.Value(0)).current;
+  const logoScale = useRef(new Animated.Value(0.8)).current;
+  const titleOpacities = useRef([
+    new Animated.Value(0), // Today's Modules
+    new Animated.Value(0), // Your Journey  
+    new Animated.Value(0), // Today's Quote
+  ]).current;
+  const sectionOpacities = useRef([
+    new Animated.Value(0), // Modules section
+    new Animated.Value(0), // Graph section
+    new Animated.Value(0), // Quote section
+  ]).current;
+  const moduleAnimations = useRef([]).current;
+  
   const fetchDashboardData = async () => {
     try {
       const { generalVideos, tasks, quote, weekData } = await getJSON('/users/dashboard/');
@@ -38,18 +53,90 @@ const Dashboard = ({ navigation }) => {
         { x: 'Su', y: weekData.sun || 0 },
       ]);
       setDailyData([weekData.week || 0, weekData.all_time || 0]);
+      
+      // Initialize module animations
+      const totalModules = (tasks?.length || 0) + (generalVideos?.length || 0);
+      moduleAnimations.length = 0; // Clear previous animations
+      for (let i = 0; i < totalModules; i++) {
+        moduleAnimations.push(new Animated.Value(0));
+      }
+      
     } catch (error) {
       console.error('Fetch error:', error.message);
       setError(error.message);
     } finally {
       setLoading(false);
       setGraphKey(k => k + 1);
+      // Trigger entrance animations after data loads
+      if (!error) {
+        startEntranceAnimations();
+      }
     }
+  };
+
+  const startEntranceAnimations = () => {
+    // Logo entrance with bounce
+    Animated.parallel([
+      Animated.timing(logoOpacity, {
+        toValue: 1,
+        duration: 800,
+        useNativeDriver: true,
+      }),
+      Animated.spring(logoScale, {
+        toValue: 1,
+        tension: 60,
+        friction: 8,
+        useNativeDriver: true,
+      }),
+    ]).start();
+
+    // Staggered section animations
+    const sectionAnimations = sectionOpacities.map((opacity, index) =>
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 600,
+        delay: 300 + (index * 200), // 300ms, 500ms, 700ms delays
+        useNativeDriver: true,
+      })
+    );
+
+    const titleAnimations = titleOpacities.map((opacity, index) =>
+      Animated.timing(opacity, {
+        toValue: 1,
+        duration: 600,
+        delay: 200 + (index * 200), // 200ms, 400ms, 600ms delays
+        useNativeDriver: true,
+      })
+    );
+
+    // Module cards slide in from right
+    const moduleSlideAnimations = moduleAnimations.map((anim, index) =>
+      Animated.timing(anim, {
+        toValue: 1,
+        duration: 500,
+        delay: 800 + (index * 150), // Start after sections, 150ms stagger
+        useNativeDriver: true,
+      })
+    );
+
+    Animated.parallel([
+      ...sectionAnimations,
+      ...titleAnimations,
+      ...moduleSlideAnimations,
+    ]).start();
   };
 
   useFocusEffect(
     useCallback(() => {
       const today = new Date().getDate();
+      
+      // Reset all animations when screen comes into focus
+      logoOpacity.setValue(0);
+      logoScale.setValue(0.8);
+      titleOpacities.forEach(anim => anim.setValue(0));
+      sectionOpacities.forEach(anim => anim.setValue(0));
+      moduleAnimations.forEach(anim => anim.setValue(0));
+      
       if (refresh || date !== today) {
         setLoading(true);
         setError(null);
@@ -57,7 +144,20 @@ const Dashboard = ({ navigation }) => {
           if (refresh) setRefresh(false);
           if (date !== today) setDate(today);
         });
+      } else {
+        // If data is already fresh, just run animations
+        startEntranceAnimations();
       }
+      
+      // Cleanup function
+      return () => {
+        console.log('[Dashboard] Screen losing focus, resetting animations');
+        logoOpacity.setValue(0);
+        logoScale.setValue(0.8);
+        titleOpacities.forEach(anim => anim.setValue(0));
+        sectionOpacities.forEach(anim => anim.setValue(0));
+        moduleAnimations.forEach(anim => anim.setValue(0));
+      };
     }, [refresh, date])
   );
 
@@ -84,6 +184,33 @@ const Dashboard = ({ navigation }) => {
     }
   }, [fetchWithAuth]);
 
+  // Animated wrapper component for module cards
+  const AnimatedModuleCard = ({ item, onPress, isTask, animationValue, index }) => {
+    return (
+      <Animated.View
+        style={{
+          opacity: animationValue,
+          transform: [
+            {
+              translateX: animationValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [100, 0], // Slide in from right
+              }),
+            },
+            {
+              scale: animationValue.interpolate({
+                inputRange: [0, 1],
+                outputRange: [0.8, 1], // Slight scale animation
+              }),
+            },
+          ],
+        }}
+      >
+        <ModuleCard item={item} onPress={onPress} isTask={isTask} />
+      </Animated.View>
+    );
+  };
+
   if (error) {
     return (
       <View style={styles.container}>
@@ -100,41 +227,177 @@ const Dashboard = ({ navigation }) => {
     <View style={styles.container}>
       <LinearGradient colors={['#AA336A', '#FFFFFF']} style={styles.gradient}>
         <View style={styles.main}>
-          <Image source={Logo} style={[styles.logo, { width: logoWidth, height: logoHeight }]} />
+          {/* Animated Logo */}
+          <Animated.View
+            style={{
+              opacity: logoOpacity,
+              transform: [{ scale: logoScale }],
+            }}
+          >
+            <Image source={Logo} style={[styles.logo, { width: logoWidth, height: logoHeight }]} />
+          </Animated.View>
+          
           <ScrollView showsVerticalScrollIndicator={false}>
             
-            <View style={[styles.videoScroll, { height: width >= 450 ? 280 : 240 }]}>
-              <Text style={styles.title}>Today's Modules</Text>
+            {/* Today's Modules Section */}
+            <Animated.View 
+              style={[
+                styles.videoScroll, 
+                { 
+                  height: width >= 450 ? 280 : 240,
+                  opacity: sectionOpacities[0],
+                  transform: [
+                    {
+                      translateY: sectionOpacities[0].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [30, 0],
+                      }),
+                    },
+                  ],
+                }
+              ]}
+            >
+              <Animated.Text 
+                style={[
+                  styles.title,
+                  {
+                    opacity: titleOpacities[0],
+                    transform: [
+                      {
+                        translateY: titleOpacities[0].interpolate({
+                          inputRange: [0, 1],
+                          outputRange: [-20, 0],
+                        }),
+                      },
+                    ],
+                  }
+                ]}
+              >
+                Today's Modules
+              </Animated.Text>
+              
               {loading ? (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
                   <ModuleSkeleton /><ModuleSkeleton />
                 </ScrollView>
               ) : (
                 <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                  {taskModuleData.map((task) => (
-                    <ModuleCard key={`task-${task.id}`} item={task} onPress={() => handleTask(task.id)} isTask={true} />
+                  {taskModuleData.map((task, index) => (
+                    <AnimatedModuleCard 
+                      key={`task-${task.id}`} 
+                      item={task} 
+                      onPress={() => handleTask(task.id)} 
+                      isTask={true}
+                      animationValue={moduleAnimations[index] || new Animated.Value(1)}
+                      index={index}
+                    />
                   ))}
-                  {dashboardData.map((item) => (
-                    <ModuleCard key={`module-${item.id}`} item={item} onPress={() => handleNavigate(item)} />
+                  {dashboardData.map((item, index) => (
+                    <AnimatedModuleCard 
+                      key={`module-${item.id}`} 
+                      item={item} 
+                      onPress={() => handleNavigate(item)}
+                      animationValue={moduleAnimations[taskModuleData.length + index] || new Animated.Value(1)}
+                      index={taskModuleData.length + index}
+                    />
                   ))}
                 </ScrollView>
               )}
-            </View>
+            </Animated.View>
 
-            <Text style={styles.title}>Your Journey</Text>
-            {loading ? (
-              <GraphSkeleton containerStyle={[styles.cardContainer, { width: width >= 450 ? '60%' : '90%' }]} />
-            ) : (
-              <Graph
-                containerStyle={[styles.cardContainer, { width: width >= 450 ? '60%' : '90%' }]}
-                weeklyData={weeklyData}
-                dailyData={dailyData}
-                key={graphKey}
-              />
-            )}
+            {/* Your Journey Section */}
+            <Animated.Text 
+              style={[
+                styles.title,
+                {
+                  opacity: titleOpacities[1],
+                  transform: [
+                    {
+                      translateY: titleOpacities[1].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-20, 0],
+                      }),
+                    },
+                  ],
+                }
+              ]}
+            >
+              Your Journey
+            </Animated.Text>
+            
+            <Animated.View
+              style={{
+                opacity: sectionOpacities[1],
+                transform: [
+                  {
+                    translateY: sectionOpacities[1].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [30, 0],
+                    }),
+                  },
+                  {
+                    scale: sectionOpacities[1].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+              }}
+            >
+              {loading ? (
+                <GraphSkeleton containerStyle={[styles.cardContainer, { width: width >= 450 ? '60%' : '90%' }]} />
+              ) : (
+                <Graph
+                  containerStyle={[styles.cardContainer, { width: width >= 450 ? '60%' : '90%' }]}
+                  weeklyData={weeklyData}
+                  dailyData={dailyData}
+                  key={graphKey}
+                />
+              )}
+            </Animated.View>
 
-            <Text style={[styles.title, { marginTop: 60 }]}>Today's Quote</Text>
-            {loading ? <QuoteSkeleton /> : <QuoteCard text={quote} />}
+            {/* Today's Quote Section */}
+            <Animated.Text 
+              style={[
+                styles.title, 
+                { 
+                  marginTop: 60,
+                  opacity: titleOpacities[2],
+                  transform: [
+                    {
+                      translateY: titleOpacities[2].interpolate({
+                        inputRange: [0, 1],
+                        outputRange: [-20, 0],
+                      }),
+                    },
+                  ],
+                }
+              ]}
+            >
+              Today's Quote
+            </Animated.Text>
+            
+            <Animated.View
+              style={{
+                opacity: sectionOpacities[2],
+                transform: [
+                  {
+                    translateY: sectionOpacities[2].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [30, 0],
+                    }),
+                  },
+                  {
+                    scale: sectionOpacities[2].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0.95, 1],
+                    }),
+                  },
+                ],
+              }}
+            >
+              {loading ? <QuoteSkeleton /> : <QuoteCard text={quote} />}
+            </Animated.View>
 
             <View style={{ height: 130 }} />
           </ScrollView>

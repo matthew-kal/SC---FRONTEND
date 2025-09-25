@@ -94,7 +94,7 @@ const CustomInput = ({ containerStyle, placeholder, onChangeText, error, ...prop
                 {!showPassword ? (
                   <Icon name="eye-outline" color={'white'} size={24} />
                 ) : (
-                  <Icon name="eye-off-outline" color={'#AA336A'} size={24} />
+                  <Icon name="eye-off-outline" color={'white'} size={24} />
                 )}
               </TouchableOpacity>
             </View>
